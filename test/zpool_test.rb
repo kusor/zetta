@@ -44,10 +44,30 @@ class ZpoolTest < Test::Unit::TestCase
     assert_kind_of Integer, @zpool.guid
   end
 
+  def test_zpool_version
+    @zpool = Zpool.new('tpool', @zlib)
+    assert_kind_of Integer, @zpool.version
+  end
+
   def test_zpool_root
     @zpool = Zpool.new('tpool', @zlib)
     # @zpool#root deprecated, use @zpool.get('altroot') instead.
     # assert_nil @zpool.root
     assert_nil @zpool.get('altroot')
+  end
+
+  def test_get_prop
+    @zpool = Zpool.new('tpool', @zlib)
+    assert_kind_of Integer, @zpool.get('guid')
+    assert_kind_of Integer, @zpool.get('version')
+
+    assert ['on','off'].include?(@zpool.get('delegation'))
+  end
+
+  def test_iteration
+    Zpool.each(@zlib) do |pool|
+      assert_kind_of Zpool, pool
+      assert_kind_of String, pool.name
+    end
   end
 end

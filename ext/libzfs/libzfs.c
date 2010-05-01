@@ -121,7 +121,7 @@ static VALUE my_zpool_get_version(VALUE self)
   zpool_handle_t *zpool_handle;
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
 
-  return ULL2NUM(zpool_get_version(zpool_handle));
+  return ULL2NUM(zpool_get_prop_int(zpool_handle, ZPOOL_PROP_VERSION, NULL));
 }
 
 static int my_zpool_iter_f(zpool_handle_t *handle, void *klass)
