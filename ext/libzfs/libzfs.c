@@ -19,14 +19,15 @@ static VALUE my_zpool_new(int argc, VALUE *argv, VALUE klass)
     rb_raise(rb_eArgError, "Two arguments are required -- the pool name and libzfs handle.");
   }
   pool_name = argv[0];
+
+  // If name is a symbol, get the C string:
+  if(SYMBOL_P(pool_name)) {
+    pool_name = rb_funcall(pool_name, rb_intern("to_s"), 0);
+  }
+
   libzfs_handle = argv[1];
 
   Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
-
-  // FIXME: How do I switch from a symbol to a string automagically?
-  // if(SYMBOL_P(pool_name)) {
-  //   pool_name = rb_funcall(pool_name, 'to_s', 0);
-  // }
 
   // FIXME: Should be +_canfail+ or not?
   zpool_handle = zpool_open_canfail(libhandle, StringValuePtr(pool_name));

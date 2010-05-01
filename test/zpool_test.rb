@@ -21,6 +21,13 @@ class ZpoolTest < Test::Unit::TestCase
     assert_kind_of LibZfs, @zpool.libzfs_handle
   end
 
+  def test_initialize_with_symbol
+    @zpool = Zpool.new(:tpool, @zlib)
+    assert_not_nil @zpool
+    assert_equal :tpool.id2name, @zpool.name
+    assert_kind_of LibZfs, @zpool.libzfs_handle
+  end
+
   def test_initialize_unexistent
     @zpool = Zpool.new('fakepool', @zlib)
     assert_not_nil @zpool
