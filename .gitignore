@@ -1,0 +1,7 @@
+*.log
+*.bundle
+Makefile
+*.o
+*.so
+*.out
+
