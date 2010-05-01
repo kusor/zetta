@@ -43,4 +43,11 @@ class ZpoolTest < Test::Unit::TestCase
     @zpool = Zpool.new('tpool', @zlib)
     assert_kind_of Integer, @zpool.guid
   end
+
+  def test_zpool_root
+    @zpool = Zpool.new('tpool', @zlib)
+    # @zpool#root deprecated, use @zpool.get('altroot') instead.
+    # assert_nil @zpool.root
+    assert_nil @zpool.get('altroot')
+  end
 end

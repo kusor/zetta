@@ -58,6 +58,32 @@ static VALUE my_zpool_get_name(VALUE self)
   return rb_str_new2(zpool_get_name(zpool_handle));
 }
 
+static VALUE my_zpool_get_prop(VALUE self, VALUE name)
+{
+  zpool_handle_t *zpool_handle;
+
+  if( TYPE(name) != T_STRING )
+  {
+    rb_raise(rb_eTypeError, "Property name must be a string.");
+  }
+
+  char *propname = STR2CSTR(name);
+
+  char zpool_prop = zpool_name_to_prop(propname);
+
+  Data_Get_Struct(self, zpool_handle_t, zpool_handle);
+  // FIXME: This needs to take into consideration the possibility
+  // of unavailable zpools.
+  if(zpool_prop == ZPOOL_PROP_GUID || zpool_prop == ZPOOL_PROP_VERSION)
+  {
+    return ULL2NUM(zpool_get_prop_int(zpool_handle, zpool_prop, NULL));
+  } else {
+    char propval[ZPOOL_MAXNAMELEN];
+    zpool_get_prop(zpool_handle, zpool_prop, propval, sizeof (propval), NULL);
+    return ( strcmp( propval, "-" ) == 0 ) ? Qnil: rb_str_new2(propval);
+  }
+}
+
 static VALUE my_zpool_get_guid(VALUE self)
 {
   zpool_handle_t *zpool_handle;
@@ -80,19 +106,6 @@ static VALUE my_zpool_get_space_total(VALUE self)
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
 
   return ULL2NUM(zpool_get_space_total(zpool_handle));
-}
-
-static VALUE my_zpool_get_root(VALUE self)
-{
-  zpool_handle_t *zpool_handle;
-  char root[ZPOOL_MAXNAMELEN];
-  Data_Get_Struct(self, zpool_handle_t, zpool_handle);
-
-  if(zpool_get_root(zpool_handle, root, sizeof(root)) < 0) {
-    return Qnil;
-  } else {
-    return rb_str_new2(root);
-  }
 }
 
 static VALUE my_zpool_get_state(VALUE self)
@@ -457,10 +470,10 @@ void Init_libzfs()
 
   rb_define_singleton_method(cZpool, "new", my_zpool_new, -1);
   rb_define_method(cZpool, "name", my_zpool_get_name, 0);
+  rb_define_method(cZpool, "get", my_zpool_get_prop, 1);
   rb_define_method(cZpool, "guid", my_zpool_get_guid, 0);
   rb_define_method(cZpool, "space_used", my_zpool_get_space_used, 0);
   rb_define_method(cZpool, "space_total", my_zpool_get_space_total, 0);
-  rb_define_method(cZpool, "root", my_zpool_get_root, 0);
   rb_define_method(cZpool, "state", my_zpool_get_state, 0);
   rb_define_method(cZpool, "version", my_zpool_get_version, 0);
   rb_define_method(cZpool, "libzfs_handle", my_zpool_get_handle, 0);
