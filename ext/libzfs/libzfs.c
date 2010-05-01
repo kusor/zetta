@@ -84,6 +84,31 @@ static VALUE my_zpool_get_prop(VALUE self, VALUE name)
   }
 }
 
+static VALUE my_zpool_set_prop(VALUE self, VALUE propname, VALUE propval)
+{
+  zpool_handle_t *zpool_handle;
+
+  if( TYPE(propname) != T_STRING )
+  {
+    rb_raise(rb_eTypeError, "Property name must be a string.");
+  }
+
+  if(TYPE(propval) != T_STRING )  // Maybe should also allow !FIXNUM_P(propval)
+  {
+    rb_raise(rb_eTypeError, "Property value must be a string or a number.");
+  }
+
+  char *name = STR2CSTR(propname);
+  // FIXME: Property might require an integer value, so need to check the type.
+  char *val = STR2CSTR(propval);
+
+  Data_Get_Struct(self, zpool_handle_t, zpool_handle);
+
+  // TODO: Should check return value here, and do some true/false return or raise error:
+  // 0 => success, -1 => Failure. Probably return true/false
+  return INT2NUM(zpool_set_prop(zpool_handle, name, val));
+}
+
 static VALUE my_zpool_get_guid(VALUE self)
 {
   zpool_handle_t *zpool_handle;
@@ -471,6 +496,7 @@ void Init_libzfs()
   rb_define_singleton_method(cZpool, "new", my_zpool_new, -1);
   rb_define_method(cZpool, "name", my_zpool_get_name, 0);
   rb_define_method(cZpool, "get", my_zpool_get_prop, 1);
+  rb_define_method(cZpool, "set", my_zpool_set_prop, 2);
   rb_define_method(cZpool, "guid", my_zpool_get_guid, 0);
   rb_define_method(cZpool, "space_used", my_zpool_get_space_used, 0);
   rb_define_method(cZpool, "space_total", my_zpool_get_space_total, 0);

@@ -67,6 +67,29 @@ class ZpoolTest < Test::Unit::TestCase
     assert_kind_of Integer, @zpool.get('version')
 
     assert ['on','off'].include?(@zpool.get('delegation'))
+
+    # These are "nicestrings" like "123M", "441K"
+    assert_kind_of String, @zpool.get('size')
+    assert_kind_of String, @zpool.get('used')
+    assert_kind_of String, @zpool.get('available')
+
+    # Unexisting properties should return nil:
+    assert_nil @zpool.get('fakeprop')
+  end
+
+  # Requires root or privileged profile to run:
+  def test_set_prop
+    @zpool = Zpool.new('tpool', @zlib)
+    assert_equal 'off', @zpool.get('listsnaps')
+    assert_equal 0, @zpool.set('listsnaps', 'on')
+    assert_equal 'on', @zpool.get('listsnaps')
+    assert_equal 0, @zpool.set('listsnaps', 'off')
+    assert_equal 'off', @zpool.get('listsnaps')
+    assert_equal -1, @zpool.set('guid', 'on')
+    assert_equal 2002, @zlib.errno
+    # WARN: these might be localized:
+    assert_equal "cannot set property for 'tpool'", @zlib.error_action
+    assert_equal "'guid' is readonly", @zlib.error_description
   end
 
   def test_iteration
