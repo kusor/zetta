@@ -49,6 +49,11 @@ class ZpoolTest < Test::Unit::TestCase
     assert_kind_of Integer, @zpool.version
   end
 
+  def test_zpool_state
+    @zpool = Zpool.new('tpool', @zlib)
+    assert_equal ZfsConsts::State::Pool::ACTIVE, @zpool.state
+  end
+
   def test_zpool_root
     @zpool = Zpool.new('tpool', @zlib)
     # @zpool#root deprecated, use @zpool.get('altroot') instead.
