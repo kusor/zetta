@@ -1,6 +1,7 @@
 require 'rake'
 require 'rake/clean'
 # require 'rake/gempackagetask'
+require 'rake/testtask'
 require 'rake/rdoctask'
 
 require 'rbconfig'
@@ -20,6 +21,14 @@ file SESSION_SO => SESSION_SRC do
     ruby 'extconf.rb'
     sh 'make'
   end
+end
+
+desc "Run tests"
+Rake::TestTask.new do |t|
+  t.libs = [EXT_DIR]
+  t.pattern = 'test/*_test.rb'
+  t.verbose = true
+  t.warning = true
 end
 
 # desc "Compiles and tests the build"
