@@ -354,7 +354,14 @@ static void Init_libzfs_consts()
   rb_define_const(mTypes, "SNAPSHOT", INT2NUM(ZFS_TYPE_SNAPSHOT));
   rb_define_const(mTypes, "VOLUME", INT2NUM(ZFS_TYPE_VOLUME));
   rb_define_const(mTypes, "POOL", INT2NUM(ZFS_TYPE_POOL));
+// ZFS_TYPE_ANY has been replaced with ZFS_TYPE_DATASET:
+#ifdef ZFS_TYPE_DATASET
+  rb_define_const(mTypes, "DATASET", INT2NUM(ZFS_TYPE_DATASET));
+  rb_define_const(mTypes, "ANY", INT2NUM(ZFS_TYPE_DATASET));
+#else
+  rb_define_const(mTypes, "DATASET", INT2NUM(ZFS_TYPE_ANY));
   rb_define_const(mTypes, "ANY", INT2NUM(ZFS_TYPE_ANY));
+#endif
 
   // Error codes
   rb_define_const(mErrors, "NOMEM", INT2NUM(EZFS_NOMEM));
