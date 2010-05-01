@@ -7,7 +7,7 @@
 // We have to merge alloc and init here because we want to allocate the space
 // for the C data structure, but we also need the arguments passed to
 // initialize to do so.
-// 
+//
 // FIXME: I'm still not sure this is the right way to do it!
 static VALUE my_zpool_new(int argc, VALUE *argv, VALUE klass)
 {
@@ -20,7 +20,7 @@ static VALUE my_zpool_new(int argc, VALUE *argv, VALUE klass)
   }
   pool_name = argv[0];
   libzfs_handle = argv[1];
-  
+
   Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
 
   // FIXME: How do I switch from a symbol to a string automagically?
@@ -39,7 +39,7 @@ static VALUE my_zpool_get_handle(VALUE self)
   VALUE klass = rb_const_get(rb_cObject, rb_intern("LibZfs"));
   libzfs_handle_t *handle;
   zpool_handle_t *zpool_handle;
-  
+
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
 
   handle = zpool_get_handle(zpool_handle);
@@ -53,7 +53,7 @@ static VALUE my_zpool_get_name(VALUE self)
 {
   zpool_handle_t *zpool_handle;
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
-  
+
   return rb_str_new2(zpool_get_name(zpool_handle));
 }
 
@@ -61,7 +61,7 @@ static VALUE my_zpool_get_guid(VALUE self)
 {
   zpool_handle_t *zpool_handle;
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
-  
+
   return ULL2NUM(zpool_get_guid(zpool_handle));
 }
 
@@ -69,7 +69,7 @@ static VALUE my_zpool_get_space_used(VALUE self)
 {
   zpool_handle_t *zpool_handle;
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
-  
+
   return ULL2NUM(zpool_get_space_used(zpool_handle));
 }
 
@@ -77,7 +77,7 @@ static VALUE my_zpool_get_space_total(VALUE self)
 {
   zpool_handle_t *zpool_handle;
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
-  
+
   return ULL2NUM(zpool_get_space_total(zpool_handle));
 }
 
@@ -106,7 +106,7 @@ static VALUE my_zpool_get_version(VALUE self)
 {
   zpool_handle_t *zpool_handle;
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
-  
+
   return ULL2NUM(zpool_get_version(zpool_handle));
 }
 
@@ -122,7 +122,7 @@ static VALUE my_zpool_iter(VALUE klass, VALUE libzfs_handle)
   Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
 
   zpool_iter(libhandle, my_zpool_iter_f, (void *)klass);
-  
+
   return Qnil;
 }
 
@@ -131,7 +131,7 @@ static VALUE my_zpool_iter(VALUE klass, VALUE libzfs_handle)
 //   libzfs_handle_t *libhandle;
 //   nvlist_t *vdevs = NULL;
 //   Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
-//   
+//
 //   return INT2NUM(zpool_create(libzfs_handle, StringValuePtr(name), vdev_list, StringValuePtr(altroot)));
 // }
 
@@ -141,7 +141,7 @@ static VALUE my_zpool_destroy(VALUE self)
 {
   zpool_handle_t *zpool_handle;
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
-  
+
   return INT2NUM(zpool_destroy(zpool_handle));
 }
 
@@ -154,7 +154,7 @@ static VALUE my_zfs_get_handle(VALUE self)
   VALUE klass = rb_const_get(rb_cObject, rb_intern("LibZfs"));
   libzfs_handle_t *handle;
   zfs_handle_t *zfs_handle;
-  
+
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
 
   handle = zfs_get_handle(zfs_handle);
@@ -198,7 +198,7 @@ static VALUE my_zfs_get_type(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
-  
+
   return INT2NUM(zfs_get_type(zfs_handle));
 }
 
@@ -206,7 +206,7 @@ static VALUE my_zfs_rename(VALUE self, VALUE target, VALUE recursive)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
-  
+
   return INT2NUM(zfs_rename(zfs_handle, StringValuePtr(target), RTEST(recursive)));
 }
 
@@ -214,7 +214,7 @@ static VALUE my_zfs_is_shared(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
-  
+
   return zfs_is_shared(zfs_handle) ? Qtrue : Qfalse;
 }
 
@@ -222,7 +222,7 @@ static VALUE my_zfs_share(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
-  
+
   return INT2NUM(zfs_share(zfs_handle));
 }
 
@@ -230,7 +230,7 @@ static VALUE my_zfs_unshare(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
-  
+
   return INT2NUM(zfs_unshare(zfs_handle));
 }
 
@@ -239,7 +239,7 @@ static VALUE my_zfs_nfs_share_name(VALUE self)
   zfs_handle_t *zfs_handle;
   char *path;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
-  
+
   return zfs_is_shared_nfs(zfs_handle, &path) ? rb_str_new2(path) : Qnil;
 }
 
@@ -247,7 +247,7 @@ static VALUE my_zfs_share_nfs(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
-  
+
   return INT2NUM(zfs_share_nfs(zfs_handle));
 }
 
@@ -255,7 +255,7 @@ static VALUE my_zfs_unshare_nfs(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
-  
+
   return INT2NUM(zfs_unshare_nfs(zfs_handle, NULL));
 }
 
@@ -263,7 +263,7 @@ static VALUE my_zfs_is_shared_iscsi(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
-  
+
   return zfs_is_shared_iscsi(zfs_handle) ? Qtrue : Qfalse;
 }
 
@@ -271,7 +271,7 @@ static VALUE my_zfs_share_iscsi(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
-  
+
   return INT2NUM(zfs_share_iscsi(zfs_handle));
 }
 
@@ -279,7 +279,7 @@ static VALUE my_zfs_unshare_iscsi(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
-  
+
   return INT2NUM(zfs_unshare_iscsi(zfs_handle));
 }
 
@@ -287,7 +287,7 @@ static VALUE my_zfs_destroy(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
-  
+
   return INT2NUM(zfs_destroy(zfs_handle));
 }
 
@@ -341,8 +341,13 @@ static void Init_libzfs_consts()
   VALUE mState = rb_define_module_under(cZfsConsts, "State");
   VALUE mPoolState = rb_define_module_under(mState, "Pool");
 
-  // Current version
+// Current version
+// ZFS_VERSION has been replaced with SPA_VERSION:
+#ifdef SPA_VERSION
+  rb_define_const(cZfsConsts, "VERSION", INT2NUM(SPA_VERSION));
+#else
   rb_define_const(cZfsConsts, "VERSION", INT2NUM(ZFS_VERSION));
+#endif
 
   // Filesystem types
   rb_define_const(mTypes, "FILESYSTEM", INT2NUM(ZFS_TYPE_FILESYSTEM));
@@ -400,7 +405,7 @@ static void Init_libzfs_consts()
   rb_define_const(mErrors, "POOL_INVALARG", INT2NUM(EZFS_POOL_INVALARG));
   rb_define_const(mErrors, "NAMETOOLONG", INT2NUM(EZFS_NAMETOOLONG));
   rb_define_const(mErrors, "UNKNOWN", INT2NUM(EZFS_UNKNOWN));
-  
+
   /* Pool health status codes. */
   rb_define_const(mHealthStatus, "CORRUPT_CACHE", INT2NUM(ZPOOL_STATUS_CORRUPT_CACHE));
   rb_define_const(mHealthStatus, "MISSING_DEV_R", INT2NUM(ZPOOL_STATUS_MISSING_DEV_R));
@@ -417,7 +422,7 @@ static void Init_libzfs_consts()
   rb_define_const(mHealthStatus, "RESILVERING", INT2NUM(ZPOOL_STATUS_RESILVERING));
   rb_define_const(mHealthStatus, "OFFLINE_DEV", INT2NUM(ZPOOL_STATUS_OFFLINE_DEV));
   rb_define_const(mHealthStatus, "OK", INT2NUM(ZPOOL_STATUS_OK));
-  
+
   /* Pool state codes */
   rb_define_const(mPoolState, "ACTIVE", INT2NUM(POOL_STATE_ACTIVE));
   rb_define_const(mPoolState, "EXPORTED", INT2NUM(POOL_STATE_EXPORTED));
@@ -435,7 +440,7 @@ void Init_libzfs()
   VALUE cZFS = rb_define_class("ZFS", rb_cObject);
 
   Init_libzfs_consts();
-  
+
   rb_define_alloc_func(cLibZfs, my_libzfs_alloc);
   rb_define_method(cLibZfs, "errno", my_libzfs_errno, 0);
   rb_define_method(cLibZfs, "print_on_error", my_libzfs_print_on_error, 1);
@@ -452,9 +457,9 @@ void Init_libzfs()
   rb_define_method(cZpool, "version", my_zpool_get_version, 0);
   rb_define_method(cZpool, "libzfs_handle", my_zpool_get_handle, 0);
   rb_define_method(cZpool, "destroy!", my_zpool_destroy, 0);
-  
+
   rb_define_singleton_method(cZpool, "each", my_zpool_iter, 1);
-  
+
   rb_define_singleton_method(cZFS, "new", my_zfs_new, -1);
   rb_define_method(cZFS, "libzfs_handle", my_zfs_get_handle, 0);
   rb_define_method(cZFS, "name", my_zfs_get_name, 0);
