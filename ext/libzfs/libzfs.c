@@ -262,6 +262,30 @@ static VALUE my_zfs_get_prop(VALUE self, VALUE name)
   return rb_str_new2(propval);
 }
 
+static VALUE my_zfs_set_prop(VALUE self, VALUE propname, VALUE propval)
+{
+  zfs_handle_t *zfs_handle;
+
+  if( TYPE(propname) != T_STRING )
+  {
+    rb_raise(rb_eTypeError, "Property name must be a string.");
+  }
+
+  if(TYPE(propval) != T_STRING ) // Maybe should also allow !FIXNUM_P(propval)
+  {
+    rb_raise(rb_eTypeError, "Property value must be a string.");
+  }
+
+  char *name = STR2CSTR(propname);
+  // FIXME: Property might receive an integer value, so need to check the type.
+  char *val = STR2CSTR(propval);
+
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+  // TODO: Should check return value here, and do some true/false return or raise error:
+  // 0 => success, -1 => Failure. Probably return true/false
+  return INT2NUM(zfs_prop_set(zfs_handle, name, val));
+}
+
 static VALUE my_zfs_rename(VALUE self, VALUE target, VALUE recursive)
 {
   zfs_handle_t *zfs_handle;
@@ -544,4 +568,5 @@ void Init_libzfs()
   rb_define_method(cZFS, "unshare_iscsi!", my_zfs_unshare_iscsi, 0);
   rb_define_method(cZFS, "destroy!", my_zfs_destroy, 0);
   rb_define_method(cZFS, "get", my_zfs_get_prop, 1);
+  rb_define_method(cZFS, "set", my_zfs_set_prop, 2);
 }

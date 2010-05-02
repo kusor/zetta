@@ -49,4 +49,17 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert @zfs.get('origin').empty?
   end
 
+  def test_set_prop
+    @zfs = ZFS.new('tpool/thome', @zlib, ZfsConsts::Types::FILESYSTEM)
+    assert_equal 0, @zfs.set("readonly", 'on')
+    assert_equal 'on', @zfs.get("readonly")
+    assert_equal 0, @zfs.set("readonly", 'off')
+    assert_equal 'off', @zfs.get("readonly")
+    # We know this is readonly, hence, exception:
+    assert_equal -1, @zfs.set('creation', Time.now.to_s)
+    assert_not_equal 0, @zlib.errno
+    assert_not_equal '', @zlib.error_action
+    assert_not_equal "no error", @zlib.error_description
+  end
+
 end
