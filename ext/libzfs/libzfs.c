@@ -218,7 +218,9 @@ static VALUE my_zfs_new(int argc, VALUE *argv, VALUE klass)
 
   Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
   zfs_handle = zfs_open(libhandle, StringValuePtr(fs_name), NUM2INT(types));
-  return Data_Wrap_Struct(klass, 0, zfs_close, zfs_handle);
+  // Prevent Segementation Faults when the given Dataset does not exist and
+  // somebody tries to access to a given property:
+  return (zfs_handle == NULL) ? Qnil: Data_Wrap_Struct(klass, 0, zfs_close, zfs_handle);
 }
 
 static VALUE my_zfs_get_name(VALUE self)
