@@ -31,4 +31,22 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert_equal "dataset does not exist", @zlib.error_description
   end
 
+  # REVIEW: Shouldn't this method return true/false?
+  def test_rename_file_system
+    @zfs = ZFS.new('tpool/thome', @zlib, ZfsConsts::Types::FILESYSTEM)
+    # rename to itself:
+    assert_equal 0, @zfs.rename('tpool/thome', false)
+  end
+
+  def test_get_prop
+    @zfs = ZFS.new('tpool/thome', @zlib, ZfsConsts::Types::FILESYSTEM)
+    require 'parsedate'
+    assert_kind_of Array, ParseDate.parsedate(@zfs.get('creation'))
+    # Something like <[2010, 4, 20, 10, 55, nil, nil, 2]>
+    assert_equal 'filesystem', @zfs.get('type')
+    assert ['on','off'].include?(@zfs.get('compression'))
+    assert_equal "/tpool/thome", @zfs.get('mountpoint')
+    assert @zfs.get('origin').empty?
+  end
+
 end

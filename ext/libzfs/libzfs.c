@@ -243,6 +243,25 @@ static VALUE my_zfs_get_type(VALUE self)
   return INT2NUM(zfs_get_type(zfs_handle));
 }
 
+static VALUE my_zfs_get_prop(VALUE self, VALUE name)
+{
+  zfs_handle_t *zfs_handle;
+
+  if( TYPE(name) != T_STRING )
+  {
+    rb_raise(rb_eTypeError, "Property name must be a string.");
+  }
+
+  char *propname = STR2CSTR(name);
+  char zfs_prop = zfs_name_to_prop(propname);
+  char propval[ZFS_MAXNAMELEN];
+
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+
+  zfs_prop_get(zfs_handle, zfs_prop, propval, sizeof(propval), NULL, NULL, 0, B_FALSE);
+  return rb_str_new2(propval);
+}
+
 static VALUE my_zfs_rename(VALUE self, VALUE target, VALUE recursive)
 {
   zfs_handle_t *zfs_handle;
@@ -524,4 +543,5 @@ void Init_libzfs()
   rb_define_method(cZFS, "share_iscsi!", my_zfs_share_iscsi, 0);
   rb_define_method(cZFS, "unshare_iscsi!", my_zfs_unshare_iscsi, 0);
   rb_define_method(cZFS, "destroy!", my_zfs_destroy, 0);
+  rb_define_method(cZFS, "get", my_zfs_get_prop, 1);
 }
