@@ -253,6 +253,10 @@ static VALUE my_zfs_get_prop(VALUE self, VALUE name)
   }
 
   char *propname = STR2CSTR(name);
+  // Do not use this method to retrieve user properties.
+  if ( zfs_prop_user(propname) ) {
+    rb_raise(rb_eArgError, "Use 'get_user_prop' in order to access user defined properties");
+  }
   char zfs_prop = zfs_name_to_prop(propname);
   char propval[ZFS_MAXNAMELEN];
 
@@ -284,6 +288,35 @@ static VALUE my_zfs_set_prop(VALUE self, VALUE propname, VALUE propval)
   // TODO: Should check return value here, and do some true/false return or raise error:
   // 0 => success, -1 => Failure. Probably return true/false
   return INT2NUM(zfs_prop_set(zfs_handle, name, val));
+}
+
+static VALUE my_zfs_get_user_prop(VALUE self, VALUE name)
+{
+  zfs_handle_t *zfs_handle;
+
+  if( TYPE(name) != T_STRING )
+  {
+    rb_raise(rb_eTypeError, "Property name must be a string.");
+  }
+  char *propname = STR2CSTR(name);
+
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+
+  if ( zfs_prop_user(propname) ) {
+    nvlist_t *user_props = zfs_get_user_props(zfs_handle);
+    nvlist_t *nv;
+    char *value;
+
+    if ( nvlist_lookup_nvlist(user_props, propname, &nv) == 0 ) {
+      if ( nvlist_lookup_string(nv, ZPROP_VALUE, &value) == 0 ) {
+        return rb_str_new2(value);
+      }
+      // TODO: This conditional must continue, and lookup additional types
+      // for user defined properties.
+    }
+  }
+
+  return Qnil;
 }
 
 static VALUE my_zfs_rename(VALUE self, VALUE target, VALUE recursive)
@@ -568,5 +601,6 @@ void Init_libzfs()
   rb_define_method(cZFS, "unshare_iscsi!", my_zfs_unshare_iscsi, 0);
   rb_define_method(cZFS, "destroy!", my_zfs_destroy, 0);
   rb_define_method(cZFS, "get", my_zfs_get_prop, 1);
+  rb_define_method(cZFS, "get_user_prop", my_zfs_get_user_prop, 1);
   rb_define_method(cZFS, "set", my_zfs_set_prop, 2);
 }

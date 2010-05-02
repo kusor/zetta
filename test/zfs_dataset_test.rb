@@ -7,6 +7,7 @@ require 'libzfs'
 # sudo zfs create tpool/thome
 # sudo zfs snapshot tpool/thome@snap
 # sudo zfs clone tpool/thome@snap tpool/thomeclone
+# sudo zfs set zfs_rb:sample=test tpool/thome
 #
 # Might have sense to add 'File.exists?('/tpool')' check.
 
@@ -60,6 +61,15 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert_not_equal 0, @zlib.errno
     assert_not_equal '', @zlib.error_action
     assert_not_equal "no error", @zlib.error_description
+  end
+
+  def test_userdef_properties
+    @zfs = ZFS.new('tpool/thome', @zlib, ZfsConsts::Types::FILESYSTEM)
+    assert_equal 'test', @zfs.get_user_prop('zfs_rb:sample')
+    assert_equal 0, @zfs.set('zfs_rb:sample', 'foo')
+    assert_equal 'foo', @zfs.get_user_prop('zfs_rb:sample')
+    assert_equal 0, @zfs.set('zfs_rb:sample', 'test')
+    assert_raise(ArgumentError) { @zfs.get('zfs_rb:sample') }
   end
 
 end
