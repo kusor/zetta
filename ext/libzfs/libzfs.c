@@ -176,13 +176,13 @@ static VALUE my_zpool_iter(VALUE klass, VALUE libzfs_handle)
 
 // FIXME: Doesn't appear to work?  Maybe I actually need to offline it before
 // I can destroy?  If so, that's something for the higher level Ruby library.
-static VALUE my_zpool_destroy(VALUE self)
-{
-  zpool_handle_t *zpool_handle;
-  Data_Get_Struct(self, zpool_handle_t, zpool_handle);
-
-  return INT2NUM(zpool_destroy(zpool_handle));
-}
+// static VALUE my_zpool_destroy(VALUE self)
+// {
+//   zpool_handle_t *zpool_handle;
+//   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
+//
+//   return INT2NUM(zpool_destroy(zpool_handle));
+// }
 
 /*
  * ZFS interface
@@ -581,7 +581,7 @@ void Init_libzfs()
   rb_define_method(cZpool, "state", my_zpool_get_state, 0);
   rb_define_method(cZpool, "version", my_zpool_get_version, 0);
   rb_define_method(cZpool, "libzfs_handle", my_zpool_get_handle, 0);
-  rb_define_method(cZpool, "destroy!", my_zpool_destroy, 0);
+  // rb_define_method(cZpool, "destroy!", my_zpool_destroy, 0);
 
   rb_define_singleton_method(cZpool, "each", my_zpool_iter, 1);
 
