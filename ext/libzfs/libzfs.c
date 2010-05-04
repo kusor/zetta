@@ -449,6 +449,30 @@ static VALUE my_libzfs_error_description(VALUE self)
   return rb_str_new2(libzfs_error_description(handle));
 }
 
+/*
+ * call-seq:
+ *   LibZfs#handle => object, libzfs_handle, instance of LibZfs
+ *
+ * Return <code>libzfs_handle</code> object, which can be used by some other
+ * methods like <code>Zpool</code> and <code>ZFS</code> initializers.
+ *
+ * This method will create an instance of <code>LibZfs</code> the fist time
+ * it's invoked and will store it into the class variable <code>@@handle</code>,
+ * in order to reuse it every time it's required.
+ *
+ * This is the method used from any other methods when a <code>ZfsLib</code>
+ * instance is required and none is supplied on the method call.
+ *
+ */
+static VALUE zfsrb_lib_handle(VALUE klass)
+{
+  if( rb_cv_get(klass, "@@handle") == Qnil ) {
+    VALUE args[] = {};
+    rb_cv_set(klass, "@@handle", rb_class_new_instance(0, args, klass));
+  }
+  return rb_cv_get(klass, "@@handle");
+}
+
 static void Init_libzfs_consts()
 {
   VALUE cZfsConsts = rb_define_module("ZfsConsts");
@@ -566,6 +590,8 @@ void Init_libzfs()
   Init_libzfs_consts();
 
   rb_define_alloc_func(cLibZfs, my_libzfs_alloc);
+  rb_define_class_variable(cLibZfs, "@@handle", Qnil);
+  rb_define_singleton_method(cLibZfs, "handle", zfsrb_lib_handle, 0);
   rb_define_method(cLibZfs, "errno", my_libzfs_errno, 0);
   rb_define_method(cLibZfs, "print_on_error", my_libzfs_print_on_error, 1);
   rb_define_method(cLibZfs, "error_action", my_libzfs_error_action, 0);
