@@ -4,6 +4,14 @@
   #include <libzfs.h>
 #endif
 
+// Internal method: used to make libzfs_handle argument optional.
+static VALUE my_libzfs_get_handle()
+{
+  ID class_id = rb_intern("LibZfs");
+  VALUE class = rb_const_get(rb_cObject, class_id);
+  return rb_funcall(class, rb_intern("handle"), 0);
+}
+
 // We have to merge alloc and init here because we want to allocate the space
 // for the C data structure, but we also need the arguments passed to
 // initialize to do so.
@@ -15,17 +23,26 @@ static VALUE my_zpool_new(int argc, VALUE *argv, VALUE klass)
   libzfs_handle_t *libhandle;
   zpool_handle_t  *zpool_handle;
 
-  if(argc != 2) {
-    rb_raise(rb_eArgError, "Two arguments are required -- the pool name and libzfs handle.");
+  if(argc < 1) {
+    rb_raise(rb_eArgError, "Zpool name is required.");
   }
+
   pool_name = argv[0];
+
+  if (TYPE(pool_name)!=T_STRING && TYPE(pool_name)!=T_SYMBOL) {
+    rb_raise(rb_eTypeError, "Zpool name must be either a string or a symbol.");
+  }
 
   // If name is a symbol, get the C string:
   if(SYMBOL_P(pool_name)) {
     pool_name = rb_funcall(pool_name, rb_intern("to_s"), 0);
   }
 
-  libzfs_handle = argv[1];
+  libzfs_handle = (argc == 1) ? my_libzfs_get_handle() : argv[1];
+
+  if(CLASS_OF(libzfs_handle) != rb_const_get(rb_cObject, rb_intern("LibZfs"))) {
+    rb_raise(rb_eTypeError, "ZFS Lib handle must be an instance of LibZfs.");
+  }
 
   Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
 
@@ -155,9 +172,18 @@ static int my_zpool_iter_f(zpool_handle_t *handle, void *klass)
   return 0;
 }
 
-static VALUE my_zpool_iter(VALUE klass, VALUE libzfs_handle)
+static VALUE my_zpool_iter(int argc, VALUE *argv, VALUE klass)
 {
+  VALUE libzfs_handle;
+
   libzfs_handle_t *libhandle;
+
+  libzfs_handle = (argc == 0) ? my_libzfs_get_handle() : argv[0];
+
+  if(CLASS_OF(libzfs_handle) != rb_const_get(rb_cObject, rb_intern("LibZfs"))) {
+    rb_raise(rb_eTypeError, "ZFS Lib handle must be an instance of LibZfs.");
+  }
+
   Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
 
   zpool_iter(libhandle, my_zpool_iter_f, (void *)klass);
@@ -609,7 +635,7 @@ void Init_libzfs()
   rb_define_method(cZpool, "libzfs_handle", my_zpool_get_handle, 0);
   // rb_define_method(cZpool, "destroy!", my_zpool_destroy, 0);
 
-  rb_define_singleton_method(cZpool, "each", my_zpool_iter, 1);
+  rb_define_singleton_method(cZpool, "each", my_zpool_iter, -1);
 
   rb_define_singleton_method(cZFS, "new", my_zfs_new, -1);
   rb_define_method(cZFS, "libzfs_handle", my_zfs_get_handle, 0);

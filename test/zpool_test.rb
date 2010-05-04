@@ -39,6 +39,22 @@ class ZpoolTest < Test::Unit::TestCase
     assert_equal "no such pool", @zlib.error_description
   end
 
+  def initialize_without_handle
+    @zpool = Zpool.new('tpool')
+    assert_not_nil @zpool
+    assert_equal 'tpool', @zpool.name
+    assert_kind_of LibZfs, @zpool.libzfs_handle
+  end
+
+  def test_initialize_with_wrong_arguments
+    # At least one argument is mandatory:
+    assert_raise(ArgumentError) { @zpool = Zpool.new }
+    # Given the first argument, it must be a string or symbol
+    assert_raise(TypeError) { @zpool = Zpool.new(1234) }
+    # Given the second argument, it must be an instance of LibZfs
+    assert_raise(TypeError) { @zpool = Zpool.new('fakepool', Array.new) }
+  end
+
   def test_zpool_guid
     @zpool = Zpool.new('tpool', @zlib)
     assert_kind_of Integer, @zpool.guid
@@ -98,4 +114,12 @@ class ZpoolTest < Test::Unit::TestCase
       assert_kind_of String, pool.name
     end
   end
+
+  def test_iteration_without_handle
+    Zpool.each do |pool|
+      assert_kind_of Zpool, pool
+      assert_kind_of String, pool.name
+    end
+  end
+
 end
