@@ -17,7 +17,7 @@ class ZfsDatasetTest < Test::Unit::TestCase
   end
 
   def test_initialize_file_system
-    @zfs = ZFS.new('tpool/home', @zlib, ZfsConsts::Types::FILESYSTEM)
+    @zfs = ZFS.new('tpool/home', ZfsConsts::Types::FILESYSTEM, @zlib)
     assert_not_nil @zfs
     assert_equal 'tpool/home', @zfs.name
     assert_equal ZfsConsts::Types::FILESYSTEM, @zfs.fs_type
@@ -25,7 +25,7 @@ class ZfsDatasetTest < Test::Unit::TestCase
   end
 
   def test_initialize_unexistent
-    @zfs = ZFS.new('tpool/this_will_probably_not_exist', @zlib, ZfsConsts::Types::FILESYSTEM)
+    @zfs = ZFS.new('tpool/this_will_probably_not_exist', ZfsConsts::Types::FILESYSTEM, @zlib)
     assert_nil @zfs
     assert_equal ZfsConsts::Errors::NOENT, @zlib.errno
     assert_equal "cannot open 'tpool/this_will_probably_not_exist'", @zlib.error_action
@@ -34,13 +34,13 @@ class ZfsDatasetTest < Test::Unit::TestCase
 
   # REVIEW: Shouldn't this method return true/false?
   def test_rename_file_system
-    @zfs = ZFS.new('tpool/thome', @zlib, ZfsConsts::Types::FILESYSTEM)
+    @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
     # rename to itself:
     assert_equal 0, @zfs.rename('tpool/thome', false)
   end
 
   def test_get_prop
-    @zfs = ZFS.new('tpool/thome', @zlib, ZfsConsts::Types::FILESYSTEM)
+    @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
     require 'parsedate'
     assert_kind_of Array, ParseDate.parsedate(@zfs.get('creation'))
     # Something like <[2010, 4, 20, 10, 55, nil, nil, 2]>
@@ -51,7 +51,7 @@ class ZfsDatasetTest < Test::Unit::TestCase
   end
 
   def test_set_prop
-    @zfs = ZFS.new('tpool/thome', @zlib, ZfsConsts::Types::FILESYSTEM)
+    @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
     assert_equal 0, @zfs.set("readonly", 'on')
     assert_equal 'on', @zfs.get("readonly")
     assert_equal 0, @zfs.set("readonly", 'off')
@@ -64,7 +64,7 @@ class ZfsDatasetTest < Test::Unit::TestCase
   end
 
   def test_userdef_properties
-    @zfs = ZFS.new('tpool/thome', @zlib, ZfsConsts::Types::FILESYSTEM)
+    @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
     assert_equal 'test', @zfs.get_user_prop('zfs_rb:sample')
     assert_equal 0, @zfs.set('zfs_rb:sample', 'foo')
     assert_equal 'foo', @zfs.get_user_prop('zfs_rb:sample')

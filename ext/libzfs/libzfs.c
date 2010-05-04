@@ -213,8 +213,8 @@ static VALUE my_zfs_new(int argc, VALUE *argv, VALUE klass)
     rb_raise(rb_eArgError, "Two arguments are required -- the file system name, libzfs handle and a mask of types.");
   }
   fs_name = argv[0];
-  libzfs_handle = argv[1];
-  types = argv[2];
+  types = argv[1];
+  libzfs_handle = argv[2];
 
   Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
   zfs_handle = zfs_open(libhandle, StringValuePtr(fs_name), NUM2INT(types));
