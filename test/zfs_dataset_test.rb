@@ -32,6 +32,26 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert_equal "dataset does not exist", @zlib.error_description
   end
 
+  def test_initialize_file_system_without_handle
+    @zfs = ZFS.new('tpool/home', ZfsConsts::Types::FILESYSTEM)
+    assert_not_nil @zfs
+    assert_equal 'tpool/home', @zfs.name
+    assert_equal ZfsConsts::Types::FILESYSTEM, @zfs.fs_type
+    assert_kind_of LibZfs, @zfs.libzfs_handle
+  end
+
+  def test_initialize_with_wrong_arguments
+    # At least two arguments are mandatory:
+    assert_raise(ArgumentError) { @zfs = ZFS.new }
+    assert_raise(ArgumentError) { @zfs = ZFS.new('tpool/home') }
+    # Given the first argument, it must be a string
+    assert_raise(TypeError) { @zfs = ZFS.new(1234, ZfsConsts::Types::FILESYSTEM) }
+    # The second argument must be an Integer
+    assert_raise(TypeError) { @zfs = ZFS.new('tpool/home', 'filesystem') }
+    # Given the third argument, it must be an instance of LibZfs
+    assert_raise(TypeError) { @zfs = ZFS.new('tpool/home', ZfsConsts::Types::FILESYSTEM, Array.new) }
+  end
+
   # REVIEW: Shouldn't this method return true/false?
   def test_rename_file_system
     @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)

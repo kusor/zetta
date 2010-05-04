@@ -235,12 +235,25 @@ static VALUE my_zfs_new(int argc, VALUE *argv, VALUE klass)
   libzfs_handle_t *libhandle;
   zfs_handle_t  *zfs_handle;
 
-  if(argc != 3) {
-    rb_raise(rb_eArgError, "Two arguments are required -- the file system name, libzfs handle and a mask of types.");
+  if(argc < 2) {
+    rb_raise(rb_eArgError, "Filesystem name and ZFS Type are required");
   }
   fs_name = argv[0];
   types = argv[1];
-  libzfs_handle = argv[2];
+
+  if( TYPE(fs_name) != T_STRING ) {
+    rb_raise(rb_eTypeError, "ZFS Dataset name must be a string.");
+  }
+
+  if( !FIXNUM_P(types) ) {
+    rb_raise(rb_eTypeError, "ZFS Dataset type must be an integer.");
+  }
+
+  libzfs_handle = (argc == 2) ? my_libzfs_get_handle() : argv[2];
+
+  if(CLASS_OF(libzfs_handle) != rb_const_get(rb_cObject, rb_intern("LibZfs"))) {
+    rb_raise(rb_eTypeError, "ZFS Lib handle must be an instance of LibZfs.");
+  }
 
   Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
   zfs_handle = zfs_open(libhandle, StringValuePtr(fs_name), NUM2INT(types));
