@@ -17,6 +17,43 @@ static VALUE my_libzfs_get_handle()
 // initialize to do so.
 //
 // FIXME: I'm still not sure this is the right way to do it!
+/*
+ *
+ * Document-class: Zpool
+ *
+ * <code>Zpool</code> provides access to ZFS storage pools.
+ *
+ * In adition to the expected zpool initialization, this class provides
+ * facilities to iterate over all the storage pools on the system.
+ *
+ *    @zlib = LibZfs.new
+ *    @zpool = Zpool.new('pool_name', @zlib)
+ *
+ *    Zpool.each do |zpool|
+ *      # access to each zpool instance
+ *    end
+ *
+ */
+
+/*
+ *
+ * Document-method: Zpool#new
+ *
+ * call-seq:
+ *   Zpool.new('pool_name')  => object
+ *   Zpool.new(:pool_name)  => object
+ *   Zpool.new('pool_name', @zlib)  => object
+ *   Zpool.new(:pool_name, @zlib)  => object
+ *
+ *
+ * Zpool initializer.
+ * Raise <code>ArgumentError</code> when <code>pool_name</code> is not given.
+ * Raise <code>TypeError</code> when <code>pool_name</code> is given and it is
+ * not a <code>String</code> or <code>Symbol</code>.
+ * Raise <code>TypeError</code> when <code>@zlib</code> handle is given and it
+ * is not an instance of <code>LibZfs</code>.
+ *
+ */
 static VALUE my_zpool_new(int argc, VALUE *argv, VALUE klass)
 {
   VALUE pool_name, libzfs_handle;
@@ -52,6 +89,14 @@ static VALUE my_zpool_new(int argc, VALUE *argv, VALUE klass)
   return Data_Wrap_Struct(klass, 0, zpool_close, zpool_handle);
 }
 
+/*
+ * call-seq:
+ *   @zpool.libzfs_handle  => object, zpool_handle
+ *
+ * Return <code>zpool_handle</code> associated with a <code>Zpool</code>
+ * instance.
+ *
+ */
 static VALUE my_zpool_get_handle(VALUE self)
 {
   VALUE klass = rb_const_get(rb_cObject, rb_intern("LibZfs"));
@@ -67,6 +112,17 @@ static VALUE my_zpool_get_handle(VALUE self)
   return Data_Wrap_Struct(klass, 0, 0, handle);
 }
 
+/*
+ * call-seq:
+ *   @zpool.name  => string, zpool name.
+ *
+ * Return current <code>Zpool</code> instance name.
+ *
+ * The <code>name</code> pointer is stored in the <code>handle</code>, hence
+ * we don't need to call <code>zpool.get('name')</code>. This method is
+ * more effective.
+ *
+ */
 static VALUE my_zpool_get_name(VALUE self)
 {
   zpool_handle_t *zpool_handle;
@@ -75,6 +131,23 @@ static VALUE my_zpool_get_name(VALUE self)
   return rb_str_new2(zpool_get_name(zpool_handle));
 }
 
+/*
+ * call-seq:
+ *   @zpool.get('propname')  => string/integer, zpool property value
+ *
+ * Given a zpool property name, return its value.
+ * Values for properties +version+ and +guid+ will be integers. Any other
+ * property value will be a string. For disk space related properties, this
+ * string will be nicely formatted as in <code>ZfsLib.nicenum</code>.
+ *
+ * Raise <code>TypeError</code> when <code>propname</code>
+ * is not a <code>String</code>.
+ *
+ * TODO:
+ *
+ *  - Ensure that the given property name is a valid zpool property.
+ *
+ */
 static VALUE my_zpool_get_prop(VALUE self, VALUE name)
 {
   zpool_handle_t *zpool_handle;
@@ -101,6 +174,20 @@ static VALUE my_zpool_get_prop(VALUE self, VALUE name)
   }
 }
 
+/*
+ * call-seq:
+ *   @zpool.set('propname', "propval")  => string/integer, zpool property value
+ *
+ * Set the given value for the given zpool property.
+ *
+ * Raise <code>TypeError</code> when <code>propname</code>
+ * is not a <code>String</code>.
+ * Raise <code>TypeError</code> when <code>proval</code>
+ * is not a <code>String</code>.
+ *
+ * TODO: Actually, return -1 on failure, 0 on succes, should return false/true
+ *
+ */
 static VALUE my_zpool_set_prop(VALUE self, VALUE propname, VALUE propval)
 {
   zpool_handle_t *zpool_handle;
@@ -126,6 +213,17 @@ static VALUE my_zpool_set_prop(VALUE self, VALUE propname, VALUE propval)
   return INT2NUM(zpool_set_prop(zpool_handle, name, val));
 }
 
+/*
+ * call-seq:
+ *   @zpool.guid  => integer, zpool guid.
+ *
+ * Return current <code>Zpool</code> instance guid property.
+ *
+ * Actually, this is the equivalent to <code>zpool.get_prop('guid')</code>.
+ * This method is here just because it was defined at the old version of this
+ * library, and will be removed when "method_missing" is implemented.
+ *
+ */
 static VALUE my_zpool_get_guid(VALUE self)
 {
   zpool_handle_t *zpool_handle;
@@ -150,6 +248,23 @@ static VALUE my_zpool_get_space_total(VALUE self)
   return ULL2NUM(zpool_get_space_total(zpool_handle));
 }
 
+/*
+ * call-seq:
+ *   @zpool.state  => integer, zpool state.
+ *
+ * Return current <code>Zpool</code> instance state as an integer.
+ *
+ * Can be converted into one of the constants defined at module
+ * <code>ZfsConsts::State::Pool</code>.
+ *
+ * <b>TODO</b>:
+ *
+ * - We don't need constants defined this way, can use strings to
+ *   get an human friendly description of zpool state. Also, should
+ *   define our own set of constants, and do not depend on the values
+ *   defined at the libzfs library.
+ *
+ */
 static VALUE my_zpool_get_state(VALUE self)
 {
   zpool_handle_t *zpool_handle;
@@ -158,6 +273,15 @@ static VALUE my_zpool_get_state(VALUE self)
   return INT2NUM(zpool_get_state(zpool_handle));
 }
 
+/*
+ * call-seq:
+ *   @zpool.version  => integer, zpool version.
+ *
+ * Return current <code>Zpool</code> instance version property.
+ *
+ * Actually, this is the equivalent to <code>zpool.get_prop('version')</code>.
+ *
+ */
 static VALUE my_zpool_get_version(VALUE self)
 {
   zpool_handle_t *zpool_handle;
@@ -172,6 +296,24 @@ static int my_zpool_iter_f(zpool_handle_t *handle, void *klass)
   return 0;
 }
 
+/*
+ *
+ * Document-method: Zpool#each
+ *
+ * call-seq:
+ *   Zpool.each {|zpool| # ... }  => nil. Iterator.
+ *   Zpool.each(@zlib) {|zpool| # ... }  => nil. Iterator.
+ *
+ * Iterates over all the pools defined in the system.
+ *
+ *    Zpool.each do |zpool|
+ *      # access to each zpool instance
+ *    end
+ *
+ * Raise <code>TypeError</code> when <code>@zlib</code> handle is given and it
+ * is not an instance of <code>LibZfs</code>.
+ *
+ */
 static VALUE my_zpool_iter(int argc, VALUE *argv, VALUE klass)
 {
   VALUE libzfs_handle;
@@ -214,6 +356,14 @@ static VALUE my_zpool_iter(int argc, VALUE *argv, VALUE klass)
  * ZFS interface
  */
 
+/*
+ * call-seq:
+ *   @zfs.libzfs_handle  => object, zfs_handle
+ *
+ * Return <code>zfs_handle</code> associated with a <code>ZFS</code>
+ * instance.
+ *
+ */
 static VALUE my_zfs_get_handle(VALUE self)
 {
   VALUE klass = rb_const_get(rb_cObject, rb_intern("LibZfs"));
@@ -229,6 +379,27 @@ static VALUE my_zfs_get_handle(VALUE self)
   return Data_Wrap_Struct(klass, 0, 0, handle);
 }
 
+/*
+ * call-seq:
+ *   @zfs = ZFS.new('dataset/name', ZfsConsts::Types)  => object
+ *   @zfs = ZFS.new('dataset/name', ZfsConsts::Types, @zlib)  => object
+ *
+ *
+ * ZFS initializer. Raises <code>ArgumentError</code> when
+ * <code>dataset_name</code> or <code>dataset_type</code> are not given.
+ *
+ * Raise <code>ArgumentError</code> when <code>dataset_name</code> and
+ * <code>dataset_type</code> are not given.
+ * Raise <code>TypeError</code> when <code>dataset_name</code> is given and it
+ * is not a <code>String</code>.
+ * Raise <code>TypeError</code> when <code>dataset_type</code> is given and it
+ * is not an <code>Integer</code>.
+ * Raise <code>TypeError</code> when <code>@zlib</code> handle is given and it
+ * is not an instance of <code>LibZfs</code>.
+ *
+ * TODO: Check that the given type is a valid type
+ *
+ */
 static VALUE my_zfs_new(int argc, VALUE *argv, VALUE klass)
 {
   VALUE fs_name, libzfs_handle, types;
@@ -262,6 +433,17 @@ static VALUE my_zfs_new(int argc, VALUE *argv, VALUE klass)
   return (zfs_handle == NULL) ? Qnil: Data_Wrap_Struct(klass, 0, zfs_close, zfs_handle);
 }
 
+/*
+ * call-seq:
+ *   @zfs.name  => string, zfs dataset name.
+ *
+ * Return current <code>ZFS</code> instance name.
+ *
+ * The <code>name</code> pointer is stored in the <code>handle</code>, hence
+ * we don't need to call <code>zfs.get('name')</code>. This method is
+ * more effective.
+ *
+ */
 static VALUE my_zfs_get_name(VALUE self)
 {
   zfs_handle_t *zfs_handle;
@@ -274,6 +456,14 @@ static VALUE my_zfs_get_name(VALUE self)
   return Qnil;
 }
 
+/*
+ * call-seq:
+ *   @zfs.fs_type  => integer, zfs dataset type constant value
+ *
+ * Return the ZFS Dataset Type for the current <code>ZFS</code> dataset
+ * instance.
+ *
+ */
 static VALUE my_zfs_get_type(VALUE self)
 {
   zfs_handle_t *zfs_handle;
@@ -282,6 +472,23 @@ static VALUE my_zfs_get_type(VALUE self)
   return INT2NUM(zfs_get_type(zfs_handle));
 }
 
+/*
+ * call-seq:
+ *   @zfs.get('propname')  => string/integer, zfs property value
+ *
+ * Given a zfs dataset property name, return its value.
+ *
+ * Any property value will be a string. For disk space related properties,
+ * this string will be nicely formatted as in <code>ZfsLib.nicenum</code>.
+ *
+ * Raise <code>TypeError</code> when <code>propname</code>
+ * is not a <code>String</code>.
+ *
+ * TODO:
+ *
+ * - Ensure that the given property name is a valid zfs dataset property.
+ *
+ */
 static VALUE my_zfs_get_prop(VALUE self, VALUE name)
 {
   zfs_handle_t *zfs_handle;
@@ -304,6 +511,24 @@ static VALUE my_zfs_get_prop(VALUE self, VALUE name)
   zfs_prop_get(zfs_handle, zfs_prop, propval, sizeof(propval), NULL, NULL, 0, B_FALSE);
   return rb_str_new2(propval);
 }
+
+/*
+ * call-seq:
+ *   @zfs.set('propname', "propval")  => string/integer, zfs dataset property value
+ *
+ * Set the given value for the given zfs dataset property.
+ *
+ *
+ * Raise <code>TypeError</code> when <code>propname</code>
+ * is not a <code>String</code>.
+ * Raise <code>TypeError</code> when <code>proval</code>
+ * is not a <code>String</code>.
+ *
+ * TODO:
+ *
+ * - Actually, return -1 on failure, 0 on succes, should return false/true.
+ *
+ */
 
 static VALUE my_zfs_set_prop(VALUE self, VALUE propname, VALUE propval)
 {
@@ -329,6 +554,32 @@ static VALUE my_zfs_set_prop(VALUE self, VALUE propname, VALUE propval)
   return INT2NUM(zfs_prop_set(zfs_handle, name, val));
 }
 
+/*
+ * call-seq:
+ *   @zfs.get_user_prop('user:propname')  => string, user defined property value
+ *
+ * Given a zfs dataset property name set by user, return its value.
+ *
+ * <b>Warning:</b> This method relies into libzfs internals, and not the public
+ * library interface, using direct lookups into ZFS data type user properties;
+ * this is something which might perfectly change on future library versions,
+ * hence the word of caution.
+ *
+ * In order to set user defined properties for a ZFS Dataset, use the same
+ * method than for system properties, i.e:
+ *
+ *    @zfs.set('user_prefix:propname', 'propval')
+ *
+ * Only string user properties are supported for now.
+ *
+ * Raise <code>TypeError</code> when <code>propname</code>
+ * is not a <code>String</code>.
+ *
+ * TODO:
+ *
+ * - Support additional types for user properties.
+ *
+ */
 static VALUE my_zfs_get_user_prop(VALUE self, VALUE name)
 {
   zfs_handle_t *zfs_handle;
@@ -358,6 +609,20 @@ static VALUE my_zfs_get_user_prop(VALUE self, VALUE name)
   return Qnil;
 }
 
+/*
+ * call-seq:
+ *   @zfs.rename('dataset/name', [false|true])  => integer, 0|-1
+ *
+ * Rename ZFS Dataset using the given <code>dataset_name</code>.
+ * When <code>recursive</code> is true, also renames all the children
+ * datasets for the current one.
+ *
+ *
+ * TODO:
+ *
+ * - Actually, return -1 on failure, 0 on succes, should return false/true.
+ * - Enforce Types, return <code>ArgumentError</code> when appropriated.
+ */
 static VALUE my_zfs_rename(VALUE self, VALUE target, VALUE recursive)
 {
   zfs_handle_t *zfs_handle;
@@ -449,6 +714,18 @@ static VALUE my_zfs_destroy(VALUE self)
 
 /*
  * The low-level libzfs handle widget.
+ */
+
+/*
+ *
+ * Document-method: LibZfs#new
+ *
+ * call-seq:
+ *   LibZfs.new  => object, libzfs_handle
+ *
+ * Return <code>libzfs_handle</code> object, which can be used by some other
+ * methods like <code>Zpool</code> and <code>ZFS</code> initializers.
+ *
  */
 static VALUE my_libzfs_alloc(VALUE klass)
 {
