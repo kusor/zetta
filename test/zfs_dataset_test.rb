@@ -92,4 +92,15 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert_raise(ArgumentError) { @zfs.get('zfs_rb:sample') }
   end
 
+  def test_iteration
+    ZFS.each(@zlib) do |zfs|
+      assert_equal(ZfsConsts::Types::FILESYSTEM, zfs.fs_type)
+    end
+  end
+
+  def test_iteration_without_handle
+    ZFS.each do |zfs|
+      assert_equal(ZfsConsts::Types::FILESYSTEM, zfs.fs_type)
+    end
+  end
 end

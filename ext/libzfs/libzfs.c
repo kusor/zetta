@@ -712,6 +712,46 @@ static VALUE my_zfs_destroy(VALUE self)
   return INT2NUM(zfs_destroy(zfs_handle));
 }
 
+
+static int my_zfs_iter_f(zfs_handle_t *handle, void *klass)
+{
+  rb_yield(Data_Wrap_Struct((VALUE)klass, 0, zfs_close, handle));
+  return 0;
+}
+
+/*
+ * call-seq:
+ *   ZFS.each {|zfs| # ... }  => nil. Iterator.
+ *   ZFS.each(@zlib) {|zfs| # ... }  => nil. Iterator.
+ *
+ * Iterates over all the root datasets defined in the system.
+ *
+ *    ZFS.each do |zfs|
+ *      # access to each zfs instance
+ *    end
+ *
+ * Raise <code>TypeError</code> when <code>@zlib</code> handle is given and it
+ * is not an instance of <code>LibZfs</code>.
+ *
+ */
+static VALUE my_zfs_iter_root(int argc, VALUE *argv, VALUE klass)
+{
+  VALUE libzfs_handle;
+  libzfs_handle_t *libhandle;
+
+  libzfs_handle = (argc == 0) ? my_libzfs_get_handle() : argv[0];
+
+  if(CLASS_OF(libzfs_handle) != rb_const_get(rb_cObject, rb_intern("LibZfs"))) {
+    rb_raise(rb_eTypeError, "ZFS Lib handle must be an instance of LibZfs.");
+  }
+
+  Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
+
+  zfs_iter_root(libhandle, my_zfs_iter_f, (void *)klass);
+
+  return Qnil;
+}
+
 /*
  * The low-level libzfs handle widget.
  */
@@ -970,4 +1010,6 @@ void Init_libzfs()
   rb_define_method(cZFS, "get", my_zfs_get_prop, 1);
   rb_define_method(cZFS, "get_user_prop", my_zfs_get_user_prop, 1);
   rb_define_method(cZFS, "set", my_zfs_set_prop, 2);
+  // ZFS Iteration:
+  rb_define_singleton_method(cZFS, "each", my_zfs_iter_root, -1);
 }
