@@ -147,4 +147,50 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert !children_fs.empty?
   end
 
+  def test_dataset_exists
+    assert ZFS.exists?('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
+    assert !ZFS.exists?('tpool/this_will_probably_not_exists', ZfsConsts::Types::FILESYSTEM, @zlib)
+    assert ZFS.exist?('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
+    assert !ZFS.exist?('tpool/this_will_probably_not_exists', ZfsConsts::Types::FILESYSTEM, @zlib)
+  end
+
+  def test_dataset_exists_without_handle
+    assert ZFS.exists?('tpool/thome', ZfsConsts::Types::FILESYSTEM)
+    assert ZFS.exist?('tpool/thome', ZfsConsts::Types::FILESYSTEM)
+  end
+
+  def test_create_destroy_success
+    create_ok_name = "tpool/new_filesystem_name_#{rand(1000)}"
+    create_fs = ZFS.create(create_ok_name, ZfsConsts::Types::FILESYSTEM, @zlib)
+    # Need to improve the type check here.
+    assert create_fs
+    assert_respond_to create_fs, :name
+    assert_equal create_ok_name, create_fs.get('name')
+    assert ZFS.exists?(create_ok_name, ZfsConsts::Types::FILESYSTEM, @zlib)
+    assert_equal 0, create_fs.destroy!
+    assert !ZFS.exists?(create_ok_name, ZfsConsts::Types::FILESYSTEM, @zlib)
+  end
+
+  def test_create_failure
+    create_failure_name = "fakepool/new_filesystem_name_#{rand(1000)}"
+    create_fs = ZFS.create(create_failure_name, ZfsConsts::Types::FILESYSTEM, @zlib)
+    assert !create_fs
+    assert_not_equal 0, @zlib.errno
+    # cannot create ...
+    assert_not_equal '', @zlib.error_action
+    # no such pool ...
+    assert_not_equal "no error", @zlib.error_description
+  end
+
+  def test_create_without_handle
+    create_ok_name = "tpool/new_filesystem_name_#{rand(1000)}"
+    create_fs = ZFS.create(create_ok_name, ZfsConsts::Types::FILESYSTEM)
+    # Need to improve the type check here.
+    assert create_fs
+    assert_respond_to create_fs, :name
+    assert_equal create_ok_name, create_fs.get('name')
+    assert ZFS.exists?(create_ok_name, ZfsConsts::Types::FILESYSTEM)
+    assert_equal 0, create_fs.destroy!
+    assert !ZFS.exists?(create_ok_name, ZfsConsts::Types::FILESYSTEM)
+  end
 end

@@ -660,6 +660,114 @@ static VALUE my_zfs_rename(VALUE self, VALUE target, VALUE recursive)
   return INT2NUM(zfs_rename(zfs_handle, StringValuePtr(target), RTEST(recursive)));
 }
 
+/*
+ * call-seq:
+ *   ZFS#create('dataset/name', ZfsConsts::Types)  => @zfs dataset instance.
+ *   ZFS#create('dataset/name', ZfsConsts::Types, @zlib)  => @zfs dataset instance.
+ *
+ * Given a <code>dataset_name</code>, and a <code>dataset_type</code>,
+ * create a zfs dataset.
+ *
+ * Return a new Zfs instance for the given dataset on success or false on failure.
+ *
+ * Raise <code>ArgumentError</code> when <code>dataset_name</code> and
+ * <code>dataset_type</code> are not given.
+ * Raise <code>TypeError</code> when <code>dataset_name</code> is given and it
+ * is not a <code>String</code>.
+ * Raise <code>TypeError</code> when <code>dataset_type</code> is given and it
+ * is not an <code>Integer</code>.
+ * Raise <code>TypeError</code> when <code>@zlib</code> handle is given and it
+ * is not an instance of <code>LibZfs</code>.
+ *
+ */
+static VALUE my_zfs_create(int argc, VALUE *argv, VALUE klass)
+{
+  VALUE fs_name, libzfs_handle, types;
+  libzfs_handle_t *libhandle;
+
+  if(argc < 2) {
+    rb_raise(rb_eArgError, "Filesystem name and ZFS Type are required");
+  }
+  fs_name = argv[0];
+  types = argv[1];
+
+  if( TYPE(fs_name) != T_STRING ) {
+    rb_raise(rb_eTypeError, "ZFS Dataset name must be a string.");
+  }
+
+  if( !FIXNUM_P(types) ) {
+    rb_raise(rb_eTypeError, "ZFS Dataset type must be an integer.");
+  }
+
+  libzfs_handle = (argc == 2) ? my_libzfs_get_handle() : argv[2];
+
+  if(CLASS_OF(libzfs_handle) != rb_const_get(rb_cObject, rb_intern("LibZfs"))) {
+    rb_raise(rb_eTypeError, "ZFS Lib handle must be an instance of LibZfs.");
+  }
+
+  Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
+
+  if (0 == zfs_create(libhandle, StringValuePtr(fs_name), NUM2INT(types), NULL)){
+    zfs_handle_t  *zfs_handle;
+    zfs_handle = zfs_open(libhandle, StringValuePtr(fs_name), NUM2INT(types));
+    return Data_Wrap_Struct(klass, 0, zfs_close, zfs_handle);
+  } else {
+    return Qfalse;
+  }
+}
+
+/*
+ * call-seq:
+ *   ZFS#exists?('dataset/name', ZfsConsts::Types)  => Boolean
+ *   ZFS#exists?('dataset/name', ZfsConsts::Types, @zlib)  => Boolean
+ *   ZFS#exist?('dataset/name', ZfsConsts::Types)  => Boolean
+ *   ZFS#exist?('dataset/name', ZfsConsts::Types, @zlib)  => Boolean
+ *
+ * Check if a dataset with the given <code>dataset_name</code>, of the given
+ * <code>dataset_type</code> exists.
+ *
+ * Return true on success or false on failure.
+ *
+ * Raise <code>ArgumentError</code> when <code>dataset_name</code> and
+ * <code>dataset_type</code> are not given.
+ * Raise <code>TypeError</code> when <code>dataset_name</code> is given and it
+ * is not a <code>String</code>.
+ * Raise <code>TypeError</code> when <code>dataset_type</code> is given and it
+ * is not an <code>Integer</code>.
+ * Raise <code>TypeError</code> when <code>@zlib</code> handle is given and it
+ * is not an instance of <code>LibZfs</code>.
+ *
+ */
+static VALUE my_zfs_dataset_exists(int argc, VALUE *argv, VALUE klass)
+{
+  VALUE fs_name, libzfs_handle, types;
+  libzfs_handle_t *libhandle;
+
+  if(argc < 2) {
+    rb_raise(rb_eArgError, "Filesystem name and ZFS Type are required");
+  }
+  fs_name = argv[0];
+  types = argv[1];
+
+  if( TYPE(fs_name) != T_STRING ) {
+    rb_raise(rb_eTypeError, "ZFS Dataset name must be a string.");
+  }
+
+  if( !FIXNUM_P(types) ) {
+    rb_raise(rb_eTypeError, "ZFS Dataset type must be an integer.");
+  }
+
+  libzfs_handle = (argc == 2) ? my_libzfs_get_handle() : argv[2];
+
+  if(CLASS_OF(libzfs_handle) != rb_const_get(rb_cObject, rb_intern("LibZfs"))) {
+    rb_raise(rb_eTypeError, "ZFS Lib handle must be an instance of LibZfs.");
+  }
+
+  Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
+
+  return zfs_dataset_exists(libhandle, StringValuePtr(fs_name), NUM2INT(types)) ? Qtrue : Qfalse;
+}
+
 static VALUE my_zfs_is_shared(VALUE self)
 {
   zfs_handle_t *zfs_handle;
@@ -733,12 +841,33 @@ static VALUE my_zfs_unshare_iscsi(VALUE self)
   return INT2NUM(zfs_unshare_iscsi(zfs_handle));
 }
 
+/*
+ * call-seq:
+ *   @zfs.destroy!  => Integer, 0|-1
+ *
+ * Destroys the current dataset instance.
+ *
+ * TODO:
+ *
+ * - Shouldn't this be a class method?. Leaving the destroyed ZFS Dataset
+ *   instance around might cause problems when trying to access some methods.
+ * - Actually, return -1 on failure, 0 on succes, should return false/true.
+ * - Right now, the reason for the failure is on @libzfs.errno, with the
+ *   associated messages. Maybe it would have sense to raise a proper ruby
+ *   error for failures.
+ *
+ */
 static VALUE my_zfs_destroy(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
 
+// Boolean parameter was added to zfs_destroy:
+#ifdef SPA_VERSION_18
+  return INT2NUM(zfs_destroy(zfs_handle,B_FALSE));
+#else
   return INT2NUM(zfs_destroy(zfs_handle));
+#endif
 }
 
 
@@ -1126,7 +1255,13 @@ void Init_libzfs()
   rb_define_method(cZFS, "is_shared_iscsi?", my_zfs_is_shared_iscsi, 0);
   rb_define_method(cZFS, "share_iscsi!", my_zfs_share_iscsi, 0);
   rb_define_method(cZFS, "unshare_iscsi!", my_zfs_unshare_iscsi, 0);
+  // Exist, Create, Destroy:
+  rb_define_singleton_method(cZFS, "create", my_zfs_create, -1);
+  // These exist? and exists? are alias.
+  rb_define_singleton_method(cZFS, "exists?", my_zfs_dataset_exists, -1);
+  rb_define_singleton_method(cZFS, "exist?", my_zfs_dataset_exists, -1);
   rb_define_method(cZFS, "destroy!", my_zfs_destroy, 0);
+  // Properties:
   rb_define_method(cZFS, "get", my_zfs_get_prop, 1);
   rb_define_method(cZFS, "get_user_prop", my_zfs_get_user_prop, 1);
   rb_define_method(cZFS, "set", my_zfs_set_prop, 2);
