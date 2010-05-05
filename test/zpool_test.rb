@@ -101,7 +101,7 @@ class ZpoolTest < Test::Unit::TestCase
     assert_equal 'on', @zpool.get('listsnaps')
     assert_equal 0, @zpool.set('listsnaps', 'off')
     assert_equal 'off', @zpool.get('listsnaps')
-    assert_equal -1, @zpool.set('guid', 'on')
+    assert_equal(-1, @zpool.set('guid', 'on'))
     assert_equal 2002, @zlib.errno
     # WARN: these might be localized:
     assert_equal "cannot set property for 'tpool'", @zlib.error_action

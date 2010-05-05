@@ -753,6 +753,75 @@ static VALUE my_zfs_iter_root(int argc, VALUE *argv, VALUE klass)
 }
 
 /*
+ * call-seq:
+ *   @zfs.each_filesystem {|zfs| # ... }  => nil. Iterator.
+ *
+ * Iterates over all the children datasets of type filesystem for
+ * the current one.
+ *
+ *    @zfs.each_filesystem do |zfs|
+ *      # access to each zfs instance
+ *    end
+ *
+ */
+static VALUE my_zfs_iter_filesystems(VALUE self)
+{
+  zfs_handle_t *zfs_handle;
+  VALUE klass = rb_class_of(self);
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+
+  zfs_iter_filesystems(zfs_handle, my_zfs_iter_f, (void *)klass);
+
+  return Qnil;
+}
+
+/*
+ * call-seq:
+ *   @zfs.each_snapshot {|zfs| # ... }  => nil. Iterator.
+ *
+ * Iterates over all the children datasets of type snapshot for
+ * the current one.
+ *
+ *    @zfs.each_snapshot do |snap|
+ *      # access to each zfs instance
+ *    end
+ *
+ */
+static VALUE my_zfs_iter_snapshots(VALUE self)
+{
+  zfs_handle_t *zfs_handle;
+  VALUE klass = rb_class_of(self);
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+
+  zfs_iter_snapshots(zfs_handle, my_zfs_iter_f, (void *)klass);
+
+  return Qnil;
+}
+
+/*
+ * call-seq:
+ *   @zfs.each_dependent {|zfs| # ... }  => nil. Iterator.
+ *
+ * Iterates over all the datasets depending on the current one.
+ * This includes filesystems, snapshots and clones.
+ *
+ *    @zfs.each_dependent do |dataset|
+ *      # access to each zfs instance
+ *    end
+ *
+ */
+static VALUE my_zfs_iter_dependents(VALUE self)
+{
+  zfs_handle_t *zfs_handle;
+  VALUE klass = rb_class_of(self);
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+  // TODO: Allow recursion should be configurable by user?
+  zfs_iter_dependents(zfs_handle, B_TRUE, my_zfs_iter_f, (void *)klass);
+
+  return Qnil;
+}
+
+/*
  * The low-level libzfs handle widget.
  */
 
@@ -1012,4 +1081,7 @@ void Init_libzfs()
   rb_define_method(cZFS, "set", my_zfs_set_prop, 2);
   // ZFS Iteration:
   rb_define_singleton_method(cZFS, "each", my_zfs_iter_root, -1);
+  rb_define_method(cZFS, "each_filesystem", my_zfs_iter_filesystems, 0);
+  rb_define_method(cZFS, "each_snapshot", my_zfs_iter_snapshots, 0);
+  rb_define_method(cZFS, "each_dependent", my_zfs_iter_dependents, 0);
 }

@@ -77,7 +77,7 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert_equal 0, @zfs.set("readonly", 'off')
     assert_equal 'off', @zfs.get("readonly")
     # We know this is readonly, hence, exception:
-    assert_equal -1, @zfs.set('creation', Time.now.to_s)
+    assert_equal(-1, @zfs.set('creation', Time.now.to_s))
     assert_not_equal 0, @zlib.errno
     assert_not_equal '', @zlib.error_action
     assert_not_equal "no error", @zlib.error_description
@@ -92,15 +92,59 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert_raise(ArgumentError) { @zfs.get('zfs_rb:sample') }
   end
 
-  def test_iteration
+  # Root Filesystems: rpool, tpool
+  def test_root_fs_iteration
     ZFS.each(@zlib) do |zfs|
       assert_equal(ZfsConsts::Types::FILESYSTEM, zfs.fs_type)
     end
   end
 
-  def test_iteration_without_handle
+  # Root Filesystems: rpool, tpool
+  def test_root_fs_iteration_without_handle
     ZFS.each do |zfs|
       assert_equal(ZfsConsts::Types::FILESYSTEM, zfs.fs_type)
     end
   end
+
+  def test_filesystem_iteration
+    # tpool/thome has no children of type File System:
+    @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
+    children_fs = []
+    @zfs.each_filesystem do |zfs|
+      children_fs << zfs
+    end
+    assert children_fs.empty?
+    # tpool has children of type File System:
+    tpool = ZFS.new('tpool', ZfsConsts::Types::FILESYSTEM, @zlib)
+    children_fs = []
+    tpool.each_filesystem do |zfs|
+      assert_equal(ZfsConsts::Types::FILESYSTEM, zfs.fs_type)
+      children_fs << zfs
+    end
+    assert !children_fs.empty?
+  end
+
+  # tpool/thome@snap
+  def test_snapshots_iteration
+    @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
+    children_fs = []
+    @zfs.each_snapshot do |zfs|
+      assert_equal(ZfsConsts::Types::SNAPSHOT, zfs.fs_type)
+      children_fs << zfs
+    end
+    assert !children_fs.empty?
+  end
+
+  # tpool/thomeclone
+  # tpool/thome@snap
+  def test_dependents_iteration
+    @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
+    children_fs = []
+    @zfs.each_dependent do |zfs|
+      assert (zfs.fs_type == ZfsConsts::Types::SNAPSHOT || ZfsConsts::Types::FILESYSTEM)
+      children_fs << zfs
+    end
+    assert !children_fs.empty?
+  end
+
 end
