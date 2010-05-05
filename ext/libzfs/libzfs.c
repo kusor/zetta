@@ -733,6 +733,14 @@ static VALUE my_libzfs_alloc(VALUE klass)
   return Data_Wrap_Struct(klass, 0, libzfs_fini, handle);
 }
 
+/*
+ * call-seq:
+ *   libzfs_handle.errno  => Integer, libzfs defined error number
+ *
+ * Return an integer with the error number when there has been any error,
+ * otherwise, 0.
+ *
+ */
 static VALUE my_libzfs_errno(VALUE self)
 {
   libzfs_handle_t *handle;
@@ -749,6 +757,14 @@ static VALUE my_libzfs_print_on_error(VALUE self, VALUE b)
   return Qnil;
 }
 
+/*
+ * call-seq:
+ *   libzfs_handle.error_action  => String, libzfs operation name
+ *
+ * When there has been any error, return the libzfs operation which has
+ * triggered the error. Otherwise, return an empty string.
+ *
+ */
 static VALUE my_libzfs_error_action(VALUE self)
 {
   libzfs_handle_t *handle;
@@ -757,6 +773,15 @@ static VALUE my_libzfs_error_action(VALUE self)
   return rb_str_new2(libzfs_error_action(handle));
 }
 
+/*
+ * call-seq:
+ *   libzfs_handle.error_description  => String, libzfs error description
+ *
+ * When there has been any error, return the reason which has caused the
+ * action stored at <code>libzfs_handle.error_action</code> to fail. Otherwise
+ * return the string +"no error"+.
+ *
+ */
 static VALUE my_libzfs_error_description(VALUE self)
 {
   libzfs_handle_t *handle;
