@@ -380,6 +380,35 @@ static VALUE my_zfs_get_handle(VALUE self)
 }
 
 /*
+ *
+ * Document-class: ZFS
+ *
+ * <code>ZFS</code> provides access to properties and operations over
+ * ZFS _filesystems_, _snapshots_ or _volumes_, (_ZFS datasets_).
+ *
+ * In adition to the expected dataset initialization, this class provides
+ * facilities to iterate over _root datasets_, and any of their associated
+ * dataset types.
+ *
+ *    [@zlib = LibZfs.new]
+ *    @zfs = ZFS.new('dataset/name', ZfsConsts::Types::FILESYSTEM[, @zlib])
+ *
+ *    @zfs.each_filesystem do |fs|
+ *      # access to all the children filesystems of @zfs dataset.
+ *    end
+ *
+ *    @zfs.each_snapshot do |sp|
+ *      # access to all the snapshots of @zfs dataset.
+ *    end
+ *
+ *    @zfs.each_dependent do |ds|
+ *      # access to all children filesystem, clones and snapshots of
+ *      # @zfs dataset.
+ *    end
+ *
+ */
+
+/*
  * call-seq:
  *   @zfs = ZFS.new('dataset/name', ZfsConsts::Types)  => object
  *   @zfs = ZFS.new('dataset/name', ZfsConsts::Types, @zlib)  => object
@@ -823,6 +852,28 @@ static VALUE my_zfs_iter_dependents(VALUE self)
 
 /*
  * The low-level libzfs handle widget.
+ */
+
+
+/*
+ * Document-class: LibZfs
+ *
+ * <code>LibZfs</code> provides access to <code>libzfs_handle</code>, required
+ * in order to get access to most of the functionalities provided by the ZFS
+ * filesystem's library.
+ *
+ * All the <code>Zpool</code> and <code>ZFS</code> class methods depending on
+ * <code>LibZfs</code> offer the possibility to do not pass an instance of this
+ * class as their final argument, creating a new instance of the class on
+ * those cases.
+ *
+ *    @zpool = Zpool.new('pool_name')
+ *
+ * When the <code>libzfs_handle</code> argument is not given to any of the
+ * methods using it, the library will use <code>LibZfs.handle</code> class
+ * method in order to create and reuse a <code>LibZfs</code> instance into
+ * the class variable "@@handle".
+ *
  */
 
 /*
