@@ -911,6 +911,14 @@ static VALUE my_zfs_nfs_share_name(VALUE self)
   return zfs_is_shared_nfs(zfs_handle, &path) ? rb_str_new2(path) : Qnil;
 }
 
+static VALUE my_zfs_is_shared_nfs(VALUE self)
+{
+  zfs_handle_t *zfs_handle;
+  char *path;
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+  return zfs_is_shared_nfs(zfs_handle, &path) ? Qtrue : Qfalse;
+}
+
 static VALUE my_zfs_share_nfs(VALUE self)
 {
   zfs_handle_t *zfs_handle;
@@ -925,6 +933,39 @@ static VALUE my_zfs_unshare_nfs(VALUE self)
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
 
   return INT2NUM(zfs_unshare_nfs(zfs_handle, NULL));
+}
+
+static VALUE my_zfs_is_shared_smb(VALUE self)
+{
+  zfs_handle_t *zfs_handle;
+  char *path;
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+  return zfs_is_shared_smb(zfs_handle, &path) ? Qtrue : Qfalse;
+}
+
+static VALUE my_zfs_smb_share_name(VALUE self)
+{
+  zfs_handle_t *zfs_handle;
+  char *path;
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+
+  return zfs_is_shared_smb(zfs_handle, &path) ? rb_str_new2(path) : Qnil;
+}
+
+static VALUE my_zfs_share_smb(VALUE self)
+{
+  zfs_handle_t *zfs_handle;
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+
+  return INT2NUM(zfs_share_smb(zfs_handle));
+}
+
+static VALUE my_zfs_unshare_smb(VALUE self)
+{
+  zfs_handle_t *zfs_handle;
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+
+  return INT2NUM(zfs_unshare_smb(zfs_handle, NULL));
 }
 
 static VALUE my_zfs_is_shared_iscsi(VALUE self)
@@ -1418,13 +1459,21 @@ void Init_libzfs()
   rb_define_method(cZFS, "name", my_zfs_get_name, 0);
   rb_define_method(cZFS, "fs_type", my_zfs_get_type, 0);
   rb_define_method(cZFS, "rename", my_zfs_rename, 2);
-  // Sharing
+  // Sharing:
   rb_define_method(cZFS, "is_shared?", my_zfs_is_shared, 0);
   rb_define_method(cZFS, "share!", my_zfs_share, 0);
   rb_define_method(cZFS, "unshare!", my_zfs_unshare, 0);
+  // NFS:
   rb_define_method(cZFS, "nfs_share_name", my_zfs_nfs_share_name, 0);
+  rb_define_method(cZFS, "is_shared_nfs?", my_zfs_is_shared_nfs, 0);
   rb_define_method(cZFS, "share_nfs!", my_zfs_share_nfs, 0);
   rb_define_method(cZFS, "unshare_nfs!", my_zfs_unshare_nfs, 0);
+  // SMB:
+  rb_define_method(cZFS, "smb_share_name", my_zfs_smb_share_name, 0);
+  rb_define_method(cZFS, "is_shared_smb?", my_zfs_is_shared_smb, 0);
+  rb_define_method(cZFS, "share_smb!", my_zfs_share_smb, 0);
+  rb_define_method(cZFS, "unshare_smb!", my_zfs_unshare_smb, 0);
+  // iSCSI:
   rb_define_method(cZFS, "is_shared_iscsi?", my_zfs_is_shared_iscsi, 0);
   rb_define_method(cZFS, "share_iscsi!", my_zfs_share_iscsi, 0);
   rb_define_method(cZFS, "unshare_iscsi!", my_zfs_unshare_iscsi, 0);
