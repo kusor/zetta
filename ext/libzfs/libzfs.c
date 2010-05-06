@@ -613,8 +613,7 @@ static VALUE my_zfs_get_user_prop(VALUE self, VALUE name)
 {
   zfs_handle_t *zfs_handle;
 
-  if( TYPE(name) != T_STRING )
-  {
+  if( TYPE(name) != T_STRING ) {
     rb_raise(rb_eTypeError, "Property name must be a string.");
   }
   char *propname = STR2CSTR(name);
@@ -768,6 +767,117 @@ static VALUE my_zfs_dataset_exists(int argc, VALUE *argv, VALUE klass)
   return zfs_dataset_exists(libhandle, StringValuePtr(fs_name), NUM2INT(types)) ? Qtrue : Qfalse;
 }
 
+/*
+ * call-seq:
+ *   ZFS#snapshot('snap/shot@name')  => ZFS instance
+ *   ZFS#snapshot('snap/shot@name', @zlib)  => ZFS instance
+ *
+ * Check if a dataset with the given <code>dataset_name</code>, of the given
+ * <code>dataset_type</code> exists.
+ *
+ * Return a ZFS snapshot instance on success or nil on failure.
+ *
+ * Raise <code>ArgumentError</code> when <code>snapshot_name</code> is not
+ * given.
+ * Raise <code>TypeError</code> when <code>snapshot_name</code> is given and it
+ * is not a <code>String</code>.
+ * Raise <code>TypeError</code> when <code>@zlib</code> handle is given and it
+ * is not an instance of <code>LibZfs</code>.
+ *
+ */
+static VALUE my_zfs_snapshot(int argc, VALUE *argv, VALUE klass)
+{
+  VALUE snapshot_name, libzfs_handle;
+  libzfs_handle_t *libhandle;
+
+  if(argc < 1) {
+    rb_raise(rb_eArgError, "Snapshot name is required required");
+  }
+
+  snapshot_name = argv[0];
+
+  if( TYPE(snapshot_name) != T_STRING ) {
+    rb_raise(rb_eTypeError, "Snapshot name must be a string.");
+  }
+
+  libzfs_handle = (argc == 1) ? my_libzfs_get_handle() : argv[1];
+
+  if(CLASS_OF(libzfs_handle) != rb_const_get(rb_cObject, rb_intern("LibZfs"))) {
+    rb_raise(rb_eTypeError, "ZFS Lib handle must be an instance of LibZfs.");
+  }
+
+  Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
+
+  if ( 0 == zfs_snapshot(libhandle, StringValuePtr(snapshot_name), B_FALSE, NULL) ){
+    zfs_handle_t  *zfs_handle;
+    zfs_handle = zfs_open(libhandle, StringValuePtr(snapshot_name), ZFS_TYPE_SNAPSHOT);
+    return Data_Wrap_Struct(klass, 0, zfs_close, zfs_handle);
+  } else {
+    return Qnil;
+  }
+}
+
+/*
+ * call-seq:
+ *   @zfs.clone!('clone_name')  => ZFS instance | nil
+ *
+ * Create a clone with the given <code>clone_name</code> for the current
+ * ZFS Snapshot instance.
+ *
+ *
+ * Raise <code>TypeError</code> when <code>clone_name</code>
+ * is not a <code>String</code>.
+ * Raise <code>NoMethodError</code> when the current <code>ZfsLib</code>
+ * instance is not a Snapshot.
+ *
+ * TODO:
+ *
+ * - Actually, return nil on failure, will raise error.
+ *
+ * NOTE: This method cannot be <i>clone</i> due to obvious Ruby reasons.
+ *
+ */
+static VALUE my_zfs_clone(VALUE self, VALUE clone_name)
+{
+  zfs_handle_t *zfs_handle;
+
+  if( TYPE(clone_name) != T_STRING ) {
+    rb_raise(rb_eTypeError, "Clone name must be a string.");
+  }
+
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+
+  if(zfs_get_type(zfs_handle) != ZFS_TYPE_SNAPSHOT) {
+    rb_raise(rb_eNoMethodError, "Clone operation is only available for Datasets of type snapshot.");
+  }
+
+  if (0 == zfs_clone(zfs_handle, StringValuePtr(clone_name), NULL)){
+    libzfs_handle_t *libhandle= zfs_get_handle(zfs_handle);
+    zfs_handle_t  *zfs_clone_handle;
+
+    zfs_clone_handle = zfs_open(libhandle, StringValuePtr(clone_name), ZFS_TYPE_FILESYSTEM);
+    return Data_Wrap_Struct(CLASS_OF(self), 0, zfs_close, zfs_clone_handle);
+  } else {
+    return Qnil;
+  }
+}
+
+/*
+ * call-seq:
+ *   @zfs.promote  => Boolean
+ *
+ * Promote the current clone to be no longer dependent on its origin.
+ *
+ */
+static VALUE my_zfs_promote(VALUE self)
+{
+  zfs_handle_t *zfs_handle;
+
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+
+  return (zfs_promote(zfs_handle) == 0) ? Qtrue : Qfalse;
+}
+
 static VALUE my_zfs_is_shared(VALUE self)
 {
   zfs_handle_t *zfs_handle;
@@ -869,7 +979,6 @@ static VALUE my_zfs_destroy(VALUE self)
   return INT2NUM(zfs_destroy(zfs_handle));
 #endif
 }
-
 
 static int my_zfs_iter_f(zfs_handle_t *handle, void *klass)
 {
@@ -1246,6 +1355,7 @@ void Init_libzfs()
   rb_define_method(cZFS, "name", my_zfs_get_name, 0);
   rb_define_method(cZFS, "fs_type", my_zfs_get_type, 0);
   rb_define_method(cZFS, "rename", my_zfs_rename, 2);
+  // Sharing
   rb_define_method(cZFS, "is_shared?", my_zfs_is_shared, 0);
   rb_define_method(cZFS, "share!", my_zfs_share, 0);
   rb_define_method(cZFS, "unshare!", my_zfs_unshare, 0);
@@ -1270,4 +1380,9 @@ void Init_libzfs()
   rb_define_method(cZFS, "each_filesystem", my_zfs_iter_filesystems, 0);
   rb_define_method(cZFS, "each_snapshot", my_zfs_iter_snapshots, 0);
   rb_define_method(cZFS, "each_dependent", my_zfs_iter_dependents, 0);
+  // Snapshots:
+  rb_define_singleton_method(cZFS, "snapshot", my_zfs_snapshot, -1);
+  // Clones:
+  rb_define_method(cZFS, "clone!", my_zfs_clone, 1);
+  rb_define_method(cZFS, "promote", my_zfs_promote, 0);
 }

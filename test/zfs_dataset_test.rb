@@ -193,4 +193,94 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert_equal 0, create_fs.destroy!
     assert !ZFS.exists?(create_ok_name, ZfsConsts::Types::FILESYSTEM)
   end
+
+  def test_snapshot_success
+    snap_name = "tpool/thome@snap_#{rand(1000)}"
+    @snap = ZFS.snapshot(snap_name, @zlib)
+
+    assert_equal 0, @zlib.errno
+    assert_equal '', @zlib.error_action
+    assert_equal "no error", @zlib.error_description
+
+    assert_kind_of ZFS, @snap
+    assert_equal(ZfsConsts::Types::SNAPSHOT, @snap.fs_type)
+
+    assert_equal 0, @snap.destroy!
+    assert !ZFS.exists?(snap_name, ZfsConsts::Types::SNAPSHOT, @zlib)
+  end
+
+  def test_snapshot_failure
+    snap_name = 'tpool/this_will_probably_not_exists@snap'
+    @snap = ZFS.snapshot(snap_name, @zlib)
+    assert_not_equal 0, @zlib.errno
+    # cannot open ...
+    assert_not_equal '', @zlib.error_action
+    # dataset does not exist
+    assert_not_equal "no error", @zlib.error_description
+    assert_nil @snap
+  end
+
+  def test_can_clone_only_snapshots
+    clone_name = "tpool/clone_#{rand(1000)}"
+    @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
+    assert_raise(NoMethodError) { @zfs.clone!(clone_name) }
+  end
+
+  def test_clone_success_and_failure
+    clone_name = "tpool/clone_#{rand(1000)}"
+    @zfs = ZFS.new('tpool/thome@snap', ZfsConsts::Types::SNAPSHOT, @zlib)
+    assert_kind_of ZFS, @zfs
+    @clone = @zfs.clone!(clone_name)
+    assert_kind_of ZFS, @clone
+    assert_equal(ZfsConsts::Types::FILESYSTEM, @clone.fs_type)
+    # A second attempt to create the another clone with the same name
+    # will result in a failure:
+    assert_nil @zfs.clone!(clone_name)
+    assert_not_equal 0, @zlib.errno
+    # cannot create ...
+    assert_not_equal '', @zlib.error_action
+    # dataset already exists
+    assert_not_equal "no error", @zlib.error_description
+    # Cleanup
+    assert_equal 0, @clone.destroy!
+    assert !ZFS.exists?(clone_name, ZfsConsts::Types::FILESYSTEM, @zlib)
+  end
+
+  def test_cannot_promote_snapshots
+    @zfs = ZFS.new('tpool/thome@snap', ZfsConsts::Types::SNAPSHOT, @zlib)
+    assert !@zfs.promote
+    assert_not_equal 0, @zlib.errno
+    # cannot promote ...
+    assert_not_equal '', @zlib.error_action
+    # snapshots can not be promoted
+    assert_not_equal "no error", @zlib.error_description
+  end
+
+  def test_promote_success
+    ds_name = "tpool/dataset_#{rand(1000)}"
+    snap_name = "#{ds_name}@snap"
+    clone_name = "#{ds_name}_clone"
+    @zfs = ZFS.create(ds_name, ZfsConsts::Types::FILESYSTEM, @zlib)
+    assert @zfs
+    @snap = ZFS.snapshot(snap_name, @zlib)
+    assert @snap
+    @clone = @snap.clone!(clone_name)
+    # Trying to destroy the dataset with clones will fail
+    assert_equal(-1, @zfs.destroy!)
+    # Promote the clone
+    assert @clone.promote
+    # We can destroy the original dataset now
+    assert_equal 0, @zfs.destroy!
+    # Now we cannot destroy the clone:
+    assert_equal(-1, @clone.destroy!)
+    # The clone has a Snapshot with the same 'suffix' than the original one:
+    assert ZFS.exists?("#{clone_name}@snap", ZfsConsts::Types::SNAPSHOT, @zlib)
+    # So, the original snapshots does not exist now:
+    assert !ZFS.exists?(snap_name, ZfsConsts::Types::SNAPSHOT, @zlib)
+    # We have to delete the new snapshot before to try to delete the old one:
+    @new_snap = ZFS.new("#{clone_name}@snap", ZfsConsts::Types::SNAPSHOT, @zlib)
+    assert_equal 0, @new_snap.destroy!
+    assert_equal 0, @clone.destroy!
+  end
+
 end
