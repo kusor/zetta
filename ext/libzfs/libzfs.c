@@ -953,6 +953,69 @@ static VALUE my_zfs_unshare_iscsi(VALUE self)
 
 /*
  * call-seq:
+ *   @zfs.is_mounted?  => Boolean
+ *
+ * Checks if the current dataset instance is or not mounted
+ *
+ * TODO:
+ *
+ * - Actually, not taking into consideration anything but default mountpoints
+ *
+ */
+static VALUE my_zfs_is_mounted(VALUE self)
+{
+  zfs_handle_t *zfs_handle;
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+
+  return zfs_is_mounted(zfs_handle, NULL) ? Qtrue : Qfalse;
+}
+
+/*
+ * call-seq:
+ *   @zfs.mount  => Integer, 0|-1
+ *
+ * Mount the current dataset instance.
+ *
+ * TODO:
+ *
+ * - Actually, return -1 on failure, 0 on succes, should return false/true.
+ * - Right now, the reason for the failure is on @libzfs.errno, with the
+ *   associated messages. Maybe it would have sense to raise a proper ruby
+ *   error for failures.
+ *
+ */
+static VALUE my_zfs_mount(VALUE self)
+{
+  zfs_handle_t *zfs_handle;
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+
+  return INT2NUM(zfs_mount(zfs_handle, NULL, 0));
+}
+
+/*
+ * call-seq:
+ *   @zfs.unmount  => Integer, 0|-1
+ *
+ * Unmount the current dataset instance.
+ *
+ * TODO:
+ *
+ * - Actually, return -1 on failure, 0 on succes, should return false/true.
+ * - Right now, the reason for the failure is on @libzfs.errno, with the
+ *   associated messages. Maybe it would have sense to raise a proper ruby
+ *   error for failures.
+ *
+ */
+static VALUE my_zfs_unmount(VALUE self)
+{
+  zfs_handle_t *zfs_handle;
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+
+  return INT2NUM(zfs_unmount(zfs_handle, NULL, 0));
+}
+
+/*
+ * call-seq:
  *   @zfs.destroy!  => Integer, 0|-1
  *
  * Destroys the current dataset instance.
@@ -1385,4 +1448,8 @@ void Init_libzfs()
   // Clones:
   rb_define_method(cZFS, "clone!", my_zfs_clone, 1);
   rb_define_method(cZFS, "promote", my_zfs_promote, 0);
+  // Mount/Unmount:
+  rb_define_method(cZFS, "is_mounted?", my_zfs_is_mounted, 0);
+  rb_define_method(cZFS, "mount", my_zfs_mount, 0);
+  rb_define_method(cZFS, "unmount", my_zfs_unmount, 0);
 }

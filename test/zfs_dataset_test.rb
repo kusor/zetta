@@ -283,4 +283,19 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert_equal 0, @clone.destroy!
   end
 
+  def test_mount_unmount
+    create_mounted_name = "tpool/new_filesystem_name_#{rand(1000)}"
+    create_fs = ZFS.create(create_mounted_name, ZfsConsts::Types::FILESYSTEM, @zlib)
+    assert create_fs
+    assert !create_fs.is_mounted?
+    assert_equal 'no', create_fs.get('mounted')
+    assert_equal "/#{create_mounted_name}", create_fs.get('mountpoint')
+    assert_equal 0, create_fs.mount
+    assert create_fs.is_mounted?
+    assert_equal 0, create_fs.unmount
+    assert !create_fs.is_mounted?
+    assert_equal 0, create_fs.destroy!
+    assert !ZFS.exists?(create_mounted_name, ZfsConsts::Types::FILESYSTEM, @zlib)
+  end
+
 end
