@@ -819,6 +819,46 @@ static VALUE my_zfs_snapshot(int argc, VALUE *argv, VALUE klass)
 
 /*
  * call-seq:
+ *   @zfs.rollback(@zfs_snapshot, true|false)  => Boolean
+ *
+ * Rollback the current <code>ZFS</code> instance to the given
+ * ZFS Snapshot instance. Second argument <code>force</code> has the
+ * same efect than the <code>-Rf</code> option for <code>zfs rollback</code>.
+ *
+ *
+ * Raise <code>TypeError</code> when <code>snapshot</code>
+ * is not an instance of <code>ZFS</code>.
+ * Raise <code>TypeError</code> when <code>snapshot</code>
+ * instance of <code>ZFS</code> is not of type <i>snapshot</i>.
+ * Raise <code>NoMethodError</code> when the current <code>ZfsLib</code>
+ * instance is not a Filesystem or Volume.
+ *
+ */
+static VALUE my_zfs_rollback(VALUE self, VALUE snapshot, VALUE force)
+{
+  zfs_handle_t *zfs_handle, *snapshot_zfs_handle;
+
+  if(CLASS_OF(snapshot) != rb_const_get(rb_cObject, rb_intern("ZFS"))) {
+    rb_raise(rb_eTypeError, "Snapshot must be an instance of ZFS.");
+  }
+  // Get the snapshot handle:
+  Data_Get_Struct(snapshot, zfs_handle_t, snapshot_zfs_handle);
+  // Get current volume/filesystem handle:
+  Data_Get_Struct(self, zfs_handle_t, zfs_handle);
+  // Raise error if the given snapshot instance is not a Snapshot:
+  if(zfs_get_type(snapshot_zfs_handle) != ZFS_TYPE_SNAPSHOT) {
+    rb_raise(rb_eTypeError, "ZFS snapshot instance must be of type Snapshot.");
+  }
+  // Raise error when trying to rollback whatever not a volume/filesystem:
+  if( zfs_get_type(zfs_handle) != ZFS_TYPE_FILESYSTEM && zfs_get_type(zfs_handle) != ZFS_TYPE_VOLUME ) {
+    rb_raise(rb_eNoMethodError, "Rollback operation is only available for Datasets of type filesystem or volume.");
+  }
+
+  return ( zfs_rollback(zfs_handle, snapshot_zfs_handle, RTEST(force)) == 0 ) ? Qtrue : Qfalse;
+}
+
+/*
+ * call-seq:
  *   @zfs.clone!('clone_name')  => ZFS instance | nil
  *
  * Create a clone with the given <code>clone_name</code> for the current
@@ -935,6 +975,7 @@ static VALUE my_zfs_unshare_nfs(VALUE self)
   return INT2NUM(zfs_unshare_nfs(zfs_handle, NULL));
 }
 
+#ifdef SPA_VERSION_9
 static VALUE my_zfs_is_shared_smb(VALUE self)
 {
   zfs_handle_t *zfs_handle;
@@ -967,7 +1008,9 @@ static VALUE my_zfs_unshare_smb(VALUE self)
 
   return INT2NUM(zfs_unshare_smb(zfs_handle, NULL));
 }
+#endif
 
+#ifndef SPA_VERSION_24
 static VALUE my_zfs_is_shared_iscsi(VALUE self)
 {
   zfs_handle_t *zfs_handle;
@@ -991,6 +1034,7 @@ static VALUE my_zfs_unshare_iscsi(VALUE self)
 
   return INT2NUM(zfs_unshare_iscsi(zfs_handle));
 }
+#endif
 
 /*
  * call-seq:
@@ -1468,15 +1512,23 @@ void Init_libzfs()
   rb_define_method(cZFS, "is_shared_nfs?", my_zfs_is_shared_nfs, 0);
   rb_define_method(cZFS, "share_nfs!", my_zfs_share_nfs, 0);
   rb_define_method(cZFS, "unshare_nfs!", my_zfs_unshare_nfs, 0);
+
+
   // SMB:
+#ifdef SPA_VERSION_9
   rb_define_method(cZFS, "smb_share_name", my_zfs_smb_share_name, 0);
   rb_define_method(cZFS, "is_shared_smb?", my_zfs_is_shared_smb, 0);
   rb_define_method(cZFS, "share_smb!", my_zfs_share_smb, 0);
   rb_define_method(cZFS, "unshare_smb!", my_zfs_unshare_smb, 0);
+#endif
+
   // iSCSI:
+#ifndef SPA_VERSION_24
   rb_define_method(cZFS, "is_shared_iscsi?", my_zfs_is_shared_iscsi, 0);
   rb_define_method(cZFS, "share_iscsi!", my_zfs_share_iscsi, 0);
   rb_define_method(cZFS, "unshare_iscsi!", my_zfs_unshare_iscsi, 0);
+#endif
+
   // Exist, Create, Destroy:
   rb_define_singleton_method(cZFS, "create", my_zfs_create, -1);
   // These exist? and exists? are alias.
@@ -1494,6 +1546,7 @@ void Init_libzfs()
   rb_define_method(cZFS, "each_dependent", my_zfs_iter_dependents, 0);
   // Snapshots:
   rb_define_singleton_method(cZFS, "snapshot", my_zfs_snapshot, -1);
+  rb_define_method(cZFS, "rollback", my_zfs_rollback, 2);
   // Clones:
   rb_define_method(cZFS, "clone!", my_zfs_clone, 1);
   rb_define_method(cZFS, "promote", my_zfs_promote, 0);

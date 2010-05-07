@@ -8,6 +8,7 @@ require 'libzfs'
 # sudo zfs snapshot tpool/thome@snap
 # sudo zfs clone tpool/thome@snap tpool/thomeclone
 # sudo zfs set zfs_rb:sample=test tpool/thome
+# sudo zfs create tpool/rollback
 #
 # Might have sense to add 'File.exists?('/tpool')' check.
 
@@ -315,56 +316,82 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert_equal 0, @zfs.set("sharenfs", 'off')
   end
 
-  # TODO: This will not be defined for snv_136+, wrap into conditional
   # BUG: Cannot properly share iSCSI, have to investigate.
   def test_share_unshare_iscsi
     @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
-    assert !@zfs.is_shared?
-    assert !@zfs.is_shared_iscsi?
-    assert_equal 'off', @zfs.get("shareiscsi")
-    # iSCSI seems to be failing anyway:
-    assert_equal 0, @zfs.set("shareiscsi", 'on')
-    assert_equal(-1, @zfs.share_iscsi!)
-    assert_not_equal 0, @zlib.errno
-    # cannot share 'tpool/thome'
-    assert_not_equal '', @zlib.error_action
-    # iscsitgtd failed request to share
-    assert_not_equal "no error", @zlib.error_description
-    # assert_equal 0, @zfs.share_iscsi!
-    # assert @zfs.is_shared_iscsi?
+    if @zfs.respond_to?(:is_shared_iscsi?)
+      assert !@zfs.is_shared?
+      assert !@zfs.is_shared_iscsi?
+      assert_equal 'off', @zfs.get("shareiscsi")
+      # iSCSI seems to be failing anyway:
+      assert_equal 0, @zfs.set("shareiscsi", 'on')
+      assert_equal(-1, @zfs.share_iscsi!)
+      assert_not_equal 0, @zlib.errno
+      # cannot share 'tpool/thome'
+      assert_not_equal '', @zlib.error_action
+      # iscsitgtd failed request to share
+      assert_not_equal "no error", @zlib.error_description
+      # assert_equal 0, @zfs.share_iscsi!
+      # assert @zfs.is_shared_iscsi?
 
-    # assert_equal 0, @zfs.unshare_iscsi!
-    # assert !@zfs.is_shared_iscsi?
-    assert_equal 0, @zfs.set("shareiscsi", 'off')
+      # assert_equal 0, @zfs.unshare_iscsi!
+      # assert !@zfs.is_shared_iscsi?
+      assert_equal 0, @zfs.set("shareiscsi", 'off')
+    end
   end
 
   def test_share_unshare_smb
     @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
-    assert !@zfs.is_shared?
-    assert !@zfs.is_shared_smb?
-    assert_equal 'off', @zfs.get("sharesmb")
-    # Unless we have one of sharenfs or sharesmb set to "on", share! will do nothing:
-    assert_equal(0, @zfs.share!)
-    assert !@zfs.is_shared?
+    if @zfs.respond_to?(:is_shared_smb?)
+      assert !@zfs.is_shared?
+      assert !@zfs.is_shared_smb?
+      assert_equal 'off', @zfs.get("sharesmb")
+      # Unless we have one of sharenfs or sharesmb set to "on", share! will do nothing:
+      assert_equal(0, @zfs.share!)
+      assert !@zfs.is_shared?
 
-    assert_equal(0, @zfs.share_smb!)
-    assert !@zfs.is_shared_smb?
+      assert_equal(0, @zfs.share_smb!)
+      assert !@zfs.is_shared_smb?
 
-    # Now, we set one of the shared properties:
-    assert_equal 0, @zfs.set("sharesmb", 'on')
-    assert_equal 0, @zfs.share_smb!
-    assert @zfs.is_shared_smb?
-    # Now, we'll unsare_smb! and use share!
-    assert_equal 0, @zfs.unshare_smb!
-    assert !@zfs.is_shared_smb?
-    assert_equal 0, @zfs.share!
-    assert @zfs.is_shared_smb?
-    assert @zfs.is_shared?
-    assert_equal 0, @zfs.unshare!
-    assert !@zfs.is_shared_smb?
-    assert !@zfs.is_shared?
-    # Return everything to its original state:
-    assert_equal 0, @zfs.set("sharesmb", 'off')
+      # Now, we set one of the shared properties:
+      assert_equal 0, @zfs.set("sharesmb", 'on')
+      assert_equal 0, @zfs.share_smb!
+      assert @zfs.is_shared_smb?
+      # Now, we'll unsare_smb! and use share!
+      assert_equal 0, @zfs.unshare_smb!
+      assert !@zfs.is_shared_smb?
+      assert_equal 0, @zfs.share!
+      assert @zfs.is_shared_smb?
+      assert @zfs.is_shared?
+      assert_equal 0, @zfs.unshare!
+      assert !@zfs.is_shared_smb?
+      assert !@zfs.is_shared?
+      # Return everything to its original state:
+      assert_equal 0, @zfs.set("sharesmb", 'off')
+    end
+  end
+
+  def test_zfs_rollback
+    fs_name = "tpool/rollback"
+    snap_name = "#{fs_name}@snap"
+    @zfs = ZFS.new(fs_name, ZfsConsts::Types::FILESYSTEM, @zlib)
+    assert_kind_of ZFS, @zfs
+    @snap = ZFS.snapshot(snap_name, @zlib)
+    assert_kind_of ZFS, @snap
+    require 'fileutils'
+    assert_equal 0, @zfs.mount
+    ds_path = @zfs.get('mountpoint')
+    file_path = File.expand_path(File.join(File.dirname(__FILE__), '..','MIT-LICENSE'))
+    FileUtils.copy_file file_path, File.join(ds_path, 'MIT-LICENSE')
+    assert File.exist?(File.join(ds_path, 'MIT-LICENSE'))
+    assert @zfs.rollback(@snap, false)
+    assert !File.exist?(File.join(ds_path, 'MIT-LICENSE'))
+    assert ZFS.exists?(snap_name, ZfsConsts::Types::SNAPSHOT, @zlib)
+    # zfs.destroy! can fail sometimes with "dataset is busy"
+    while (@snap.destroy! != 0 && @zlib.errno == 2007)
+      sleep(5)
+    end
+    @zfs.unmount
   end
 
 end
