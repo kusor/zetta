@@ -1,0 +1,183 @@
+== ZFS Filesystem bindings for Ruby
+
+LibZfs Ruby is a C library interface to ZFS, Sun's Zettabyte File System, which
+made its debut in OpenSolaris. Actually, Solaris 10 stable release, Open
+Solaris and FreeBSD-8.0 provide stable implementations.
+
+There is also a community driven implementation for Mac OsX, but haven't tried
+to get this library running there yet.
+
+=== A Word of Caution
+
+At this moment, I'm trying to review and test this library into as many as
+possible different versions of Open Solaris. The library hasn't been updated
+since 2007 so, it's perfectly possible to find bugs and, what is worse, cause
+infamous <i>Segmentation faults</i>.
+
+=== Building
+
+  rake compile
+
+=== Usage
+
+Previous version have some code intended to manage ZFS Storage Pools creation/deletion.
+However, getting that code working is not too high on the priority list;
+there are other interesting functionalities provided by the ZFS library which
+should be implemented before, like <code>zfs send/recv</code>, since it looks
+like those would be widely used if you compare with Zpool creation.
+
+The idea is to progressively provide a ruby interface for the most frequently used
+subcommands of the <code>zfs</code> and <code>zpool</code> command line utilities.
+
+==== ZFS Storage Pools.
+
+The library provides equivalents for the following <code>zpool</code> subcommands:
+
+  zpool list
+  zpool get property pool
+  zpool set property=value pool
+  zpool status pool
+
+Primary usage of the <code>Zpool</code> class might be iteration over the different
+storage pools defined on the system:
+
+  [@zlib = LibZfs.new]
+  Zpool.each [(@zlib)] do |zpool|
+    # access to each zpool instance
+  end
+
+One can, anyway, access directly to a given <code>Zpool</code> using its
+<code>name</code>, either as a String or a Ruby Symbol:
+
+  [@zlib = LibZfs.new]
+  # Use a String:
+  @zpool = Zpool.new('pool_name' [, @zlib])
+  # Use a Symbol:
+  @zpool = Zpool.new(:pool_name [, @zlib])
+
+Then, for a given <code>Zpool</code> instance, we can access to any defined
+property using <code>@zpool.get('propname')</code> or set any property by
+using <code>@zpool.get('propname', 'propval')</code>.
+
+Of course, any attempt to set an invalid value for a property, or trying to
+set any value for a read-only property will result in an error. (See
+<code>LibZfs</code> error methods in order to get more info).
+
+Finally, <code>status</code> method will return the current <code>Zpool</code>
+instance status as any of the constants defined at
+<code>ZfsConsts::State::Pool</code>.
+
+==== ZFS Datasets
+
+The library provides equivalents for the following <code>zfs</code> subcommands:
+
+  zfs list
+  zfs get property dataset/name
+  zfs set property=value dataset/name
+  zfs destroy dataset/name
+  zfs snapshot dataset/name@snap
+  zfs rollback dataset/name@snap
+  zfs mount dataset/name
+  zfs unmount dataset/name
+  zfs clone dataset/name@snap another/dataset
+  zfs promote another/dataset
+  zfs rename dataset/name another/name
+  zfs share dataset/name
+  zfs unshare dataset/name
+
+We can also iterate over <i>root</i> filesystems using <code>ZFS.each</code>:
+
+  [@zlib = LibZfs.new]
+  ZFS.each [(@zlib)] do |zfs|
+    # access to each root filesystem zfs instance
+  end
+
+We can say these <i>root</i> filesystems will be the equivalent for the system
+defined <code>Zpools</code>. Then, for these and any other dataset, we can use
+one of the different iteration methods:
+
+  zfs.each_filesystem
+  zfs.each_snapshot
+  zfs.each_dependent
+
+While it's obvious the type of datasets <code>each_filesystem</code> and
+<code>each_snapshot</code> will iterate over, it's convenient to highlight that
+<code>each_dependent</code> will iterate not only over snapshots and children
+filesystems for the current <code>ZFS</code> instance, but also over
+<i>any associated clone</i>.
+
+For ZFS Datasets is also possible to access directly to any of them instantiating
+the ZFS class with the dataset name and type:
+
+  [@zlib = LibZfs.new]
+  # Use a String:
+  @zfs = ZFS.new('dataset/name', ZfsConsts::Types::FILESYSTEM [, @zlib])
+
+=== Run the test suite:
+
+In order to be able to run the test suite, need to create some predefined ZFS
+Datasets and Storage Pools:
+
+  sudo mkdir /export/vdev
+  sudo mkfile 128m /export/vdev/d1
+  sudo zpool create tpool /export/vdev/d1
+  sudo zfs create tpool/home
+  sudo zfs create tpool/thome
+  sudo zfs snapshot tpool/thome@snap
+  sudo zfs clone tpool/thome@snap tpool/thomeclone
+  sudo zfs set zfs_rb:sample=test tpool/thome
+  sudo zfs create tpool/rollback
+
+Then, you need to run the tests as root with:
+
+  sudo rake test
+
+or, you need to run it with a privileged user with all the required profiles,
+including:
+
+  ZFS File System Management
+  ZFS Storage Management
+  File System Management
+  SMB Management
+
+by running:
+
+  pfexec rake test
+
+=== Tested Systems
+
+I've successfully built and tested the library on the following Open Solaris
+Versions:
+
+- Open Solaris 2009.06 (snv_111b)
+- Open Solaris 2010.02 Preview (snv_117)
+- Open Solaris Development 134 (snv_134)
+
+=== TODO:
+
+* Review arguments given to all the C library functions, perform the appropriated
+  type checks, and raise <code>ArgumentError</code> when proceeds.
+
+* Validate Zpool/ZFS properties given to <code>@zfs.set</code>,
+  <code>@zfs.get</code>, <code>@zpool.get</code>, <code>@zpool.set</code>.
+
+* Allow <code>@zfs.set</code> to use numerical values too.
+
+* Handle properties of type Integer from <code>@zfs.get_user_prop</code>
+
+* Define all the required library constants, and do not rely into libzfs values
+  from ruby. The implementation should try to hide whatever can change on
+  libzfs updates.
+
+* Define a set of custom error classes, and raise the appropriated one when
+  required. LibZfs error integers shouldn't be available to the end user.
+
+* Implement the equivalents for the following zfs subcommands:
+
+    zfs send
+    zfs receive
+    zfs release
+    zfs hold
+
+* Some refactoring: my_zfs_dataset_exists, my_zfs_create and my_zfs_new share a
+  lot of code which could be using the same C function.

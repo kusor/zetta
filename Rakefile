@@ -31,6 +31,19 @@ Rake::TestTask.new do |t|
   t.warning = true
 end
 
+require 'rake/rdoctask'
+
+Rake::RDocTask.new do |t|
+  t.rdoc_dir = 'rdoc'
+  t.title    = "ZFS Filesystem bindings for Ruby"
+  t.options << '--line-numbers' << '--inline-source' << '-A cattr_accessor=object'
+  t.options << '--charset' << 'utf-8'
+  t.options << '--main' << 'README.rdoc'
+  t.rdoc_files.include('ext/libzfs/libzfs.c')
+  t.rdoc_files.include('README.rdoc')
+end
+
+
 # desc "Compiles and tests the build"
 # task :default => [ :compile, :spec ]
 #
@@ -79,15 +92,5 @@ end
 #   spec.spec_files = FileList['spec/**/*_spec.rb']
 #   spec.rcov = true
 #   spec.rcov_dir = "doc/coverage"
-# end
-#
-# Rake::RDocTask.new do |rdoc|
-#   rdoc.rdoc_dir = 'doc/rdoc'
-#   rdoc.options += ['--line-numbers', '--inline-source']
-#   rdoc.main = 'README'
-#   rdoc.rdoc_files.add [SPEC.extra_rdoc_files, 'lib/**/*.rb'].flatten
-# end
-#
-# Rake::GemPackageTask.new(SPEC) do |p|
 # end
 #
