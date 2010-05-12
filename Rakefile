@@ -7,9 +7,9 @@ require 'rake/rdoctask'
 require 'rbconfig'
 include Config
 
-EXT_DIR = 'ext/libzfs'
-SESSION_SO = "#{EXT_DIR}/libzfs.#{CONFIG['DLEXT']}"
-SESSION_SRC = "#{EXT_DIR}/libzfs.c"
+EXT_DIR = 'ext/zetta'
+SESSION_SO = "#{EXT_DIR}/zetta.#{CONFIG['DLEXT']}"
+SESSION_SRC = "#{EXT_DIR}/zetta.c"
 
 CLEAN.include FileList["#{EXT_DIR}/*"].exclude(/^.*\.(rb|c)$/)
 
@@ -39,7 +39,7 @@ Rake::RDocTask.new do |t|
   t.options << '--line-numbers' << '--inline-source' << '-A cattr_accessor=object'
   t.options << '--charset' << 'utf-8'
   t.options << '--main' << 'README.rdoc'
-  t.rdoc_files.include('ext/libzfs/libzfs.c')
+  t.rdoc_files.include('ext/zetta/zetta.c')
   t.rdoc_files.include('README.rdoc')
 end
 

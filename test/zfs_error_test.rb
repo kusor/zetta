@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'libzfs'
+require 'zetta'
 
 class ZsfErrorTest < Test::Unit::TestCase
   def test_zfs_errors_defined

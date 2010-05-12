@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'libzfs'
+require 'zetta'
 
 # In order to run the tests on this file need to do:
 #

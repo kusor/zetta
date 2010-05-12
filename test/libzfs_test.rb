@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'libzfs'
+require 'zetta'
 
 class LibZfsTest < Test::Unit::TestCase
   def setup

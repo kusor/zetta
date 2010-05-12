@@ -1541,7 +1541,7 @@ static void Init_libzfs_errors()
   VALUE cZfsPostSplitOnlineError = rb_define_class_under(mZfsError, "PostSplitOnlineError", cZfsError);
 }
 
-void Init_libzfs()
+void Init_zetta()
 {
   VALUE cLibZfs = rb_define_class("LibZfs", rb_cObject);
   VALUE cZpool = rb_define_class("Zpool", rb_cObject);
