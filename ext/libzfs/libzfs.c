@@ -5,7 +5,7 @@
 #endif
 
 // Internal method: used to make libzfs_handle argument optional.
-static VALUE my_libzfs_get_handle()
+static VALUE zetta_lib_get_handle()
 {
   ID class_id = rb_intern("LibZfs");
   VALUE class = rb_const_get(rb_cObject, class_id);
@@ -54,7 +54,7 @@ static VALUE my_libzfs_get_handle()
  * is not an instance of <code>LibZfs</code>.
  *
  */
-static VALUE my_zpool_new(int argc, VALUE *argv, VALUE klass)
+static VALUE zetta_pool_new(int argc, VALUE *argv, VALUE klass)
 {
   VALUE pool_name, libzfs_handle;
   libzfs_handle_t *libhandle;
@@ -75,7 +75,7 @@ static VALUE my_zpool_new(int argc, VALUE *argv, VALUE klass)
     pool_name = rb_funcall(pool_name, rb_intern("to_s"), 0);
   }
 
-  libzfs_handle = (argc == 1) ? my_libzfs_get_handle() : argv[1];
+  libzfs_handle = (argc == 1) ? zetta_lib_get_handle() : argv[1];
 
   if(CLASS_OF(libzfs_handle) != rb_const_get(rb_cObject, rb_intern("LibZfs"))) {
     rb_raise(rb_eTypeError, "ZFS Lib handle must be an instance of LibZfs.");
@@ -97,7 +97,7 @@ static VALUE my_zpool_new(int argc, VALUE *argv, VALUE klass)
  * instance.
  *
  */
-static VALUE my_zpool_get_handle(VALUE self)
+static VALUE zetta_pool_get_handle(VALUE self)
 {
   VALUE klass = rb_const_get(rb_cObject, rb_intern("LibZfs"));
   libzfs_handle_t *handle;
@@ -123,7 +123,7 @@ static VALUE my_zpool_get_handle(VALUE self)
  * more effective.
  *
  */
-static VALUE my_zpool_get_name(VALUE self)
+static VALUE zetta_pool_get_name(VALUE self)
 {
   zpool_handle_t *zpool_handle;
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
@@ -148,7 +148,7 @@ static VALUE my_zpool_get_name(VALUE self)
  *  - Ensure that the given property name is a valid zpool property.
  *
  */
-static VALUE my_zpool_get_prop(VALUE self, VALUE name)
+static VALUE zetta_pool_get_prop(VALUE self, VALUE name)
 {
   zpool_handle_t *zpool_handle;
 
@@ -188,7 +188,7 @@ static VALUE my_zpool_get_prop(VALUE self, VALUE name)
  * TODO: Actually, return -1 on failure, 0 on succes, should return false/true
  *
  */
-static VALUE my_zpool_set_prop(VALUE self, VALUE propname, VALUE propval)
+static VALUE zetta_pool_set_prop(VALUE self, VALUE propname, VALUE propval)
 {
   zpool_handle_t *zpool_handle;
 
@@ -224,7 +224,7 @@ static VALUE my_zpool_set_prop(VALUE self, VALUE propname, VALUE propval)
  * library, and will be removed when "method_missing" is implemented.
  *
  */
-static VALUE my_zpool_get_guid(VALUE self)
+static VALUE zetta_pool_get_guid(VALUE self)
 {
   zpool_handle_t *zpool_handle;
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
@@ -232,7 +232,7 @@ static VALUE my_zpool_get_guid(VALUE self)
   return ULL2NUM(zpool_get_prop_int(zpool_handle, ZPOOL_PROP_GUID, NULL));
 }
 
-static VALUE my_zpool_get_space_used(VALUE self)
+static VALUE zetta_pool_get_space_used(VALUE self)
 {
   zpool_handle_t *zpool_handle;
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
@@ -240,7 +240,7 @@ static VALUE my_zpool_get_space_used(VALUE self)
   return ULL2NUM(zpool_get_space_used(zpool_handle));
 }
 
-static VALUE my_zpool_get_space_total(VALUE self)
+static VALUE zetta_pool_get_space_total(VALUE self)
 {
   zpool_handle_t *zpool_handle;
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
@@ -265,7 +265,7 @@ static VALUE my_zpool_get_space_total(VALUE self)
  *   defined at the libzfs library.
  *
  */
-static VALUE my_zpool_get_state(VALUE self)
+static VALUE zetta_pool_get_state(VALUE self)
 {
   zpool_handle_t *zpool_handle;
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
@@ -282,7 +282,7 @@ static VALUE my_zpool_get_state(VALUE self)
  * Actually, this is the equivalent to <code>zpool.get_prop('version')</code>.
  *
  */
-static VALUE my_zpool_get_version(VALUE self)
+static VALUE zetta_pool_get_version(VALUE self)
 {
   zpool_handle_t *zpool_handle;
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
@@ -290,7 +290,7 @@ static VALUE my_zpool_get_version(VALUE self)
   return ULL2NUM(zpool_get_prop_int(zpool_handle, ZPOOL_PROP_VERSION, NULL));
 }
 
-static int my_zpool_iter_f(zpool_handle_t *handle, void *klass)
+static int zetta_pool_iter_f(zpool_handle_t *handle, void *klass)
 {
   rb_yield(Data_Wrap_Struct((VALUE)klass, 0, zpool_close, handle));
   return 0;
@@ -314,13 +314,13 @@ static int my_zpool_iter_f(zpool_handle_t *handle, void *klass)
  * is not an instance of <code>LibZfs</code>.
  *
  */
-static VALUE my_zpool_iter(int argc, VALUE *argv, VALUE klass)
+static VALUE zetta_pool_iter(int argc, VALUE *argv, VALUE klass)
 {
   VALUE libzfs_handle;
 
   libzfs_handle_t *libhandle;
 
-  libzfs_handle = (argc == 0) ? my_libzfs_get_handle() : argv[0];
+  libzfs_handle = (argc == 0) ? zetta_lib_get_handle() : argv[0];
 
   if(CLASS_OF(libzfs_handle) != rb_const_get(rb_cObject, rb_intern("LibZfs"))) {
     rb_raise(rb_eTypeError, "ZFS Lib handle must be an instance of LibZfs.");
@@ -328,12 +328,12 @@ static VALUE my_zpool_iter(int argc, VALUE *argv, VALUE klass)
 
   Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
 
-  zpool_iter(libhandle, my_zpool_iter_f, (void *)klass);
+  zpool_iter(libhandle, zetta_pool_iter_f, (void *)klass);
 
   return Qnil;
 }
 
-// static VALUE my_zpool_create(VALUE libzfs_handle, VALUE name, VALUE vdevs, VALUE altroot)
+// static VALUE zetta_pool_create(VALUE libzfs_handle, VALUE name, VALUE vdevs, VALUE altroot)
 // {
 //   libzfs_handle_t *libhandle;
 //   nvlist_t *vdevs = NULL;
@@ -344,7 +344,7 @@ static VALUE my_zpool_iter(int argc, VALUE *argv, VALUE klass)
 
 // FIXME: Doesn't appear to work?  Maybe I actually need to offline it before
 // I can destroy?  If so, that's something for the higher level Ruby library.
-// static VALUE my_zpool_destroy(VALUE self)
+// static VALUE zetta_pool_destroy(VALUE self)
 // {
 //   zpool_handle_t *zpool_handle;
 //   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
@@ -364,7 +364,7 @@ static VALUE my_zpool_iter(int argc, VALUE *argv, VALUE klass)
  * instance.
  *
  */
-static VALUE my_zfs_get_handle(VALUE self)
+static VALUE zetta_fs_get_handle(VALUE self)
 {
   VALUE klass = rb_const_get(rb_cObject, rb_intern("LibZfs"));
   libzfs_handle_t *handle;
@@ -429,7 +429,7 @@ static VALUE my_zfs_get_handle(VALUE self)
  * TODO: Check that the given type is a valid type
  *
  */
-static VALUE my_zfs_new(int argc, VALUE *argv, VALUE klass)
+static VALUE zetta_fs_new(int argc, VALUE *argv, VALUE klass)
 {
   VALUE fs_name, libzfs_handle, types;
   libzfs_handle_t *libhandle;
@@ -449,7 +449,7 @@ static VALUE my_zfs_new(int argc, VALUE *argv, VALUE klass)
     rb_raise(rb_eTypeError, "ZFS Dataset type must be an integer.");
   }
 
-  libzfs_handle = (argc == 2) ? my_libzfs_get_handle() : argv[2];
+  libzfs_handle = (argc == 2) ? zetta_lib_get_handle() : argv[2];
 
   if(CLASS_OF(libzfs_handle) != rb_const_get(rb_cObject, rb_intern("LibZfs"))) {
     rb_raise(rb_eTypeError, "ZFS Lib handle must be an instance of LibZfs.");
@@ -473,7 +473,7 @@ static VALUE my_zfs_new(int argc, VALUE *argv, VALUE klass)
  * more effective.
  *
  */
-static VALUE my_zfs_get_name(VALUE self)
+static VALUE zetta_fs_get_name(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   const char *name = NULL;
@@ -493,7 +493,7 @@ static VALUE my_zfs_get_name(VALUE self)
  * instance.
  *
  */
-static VALUE my_zfs_get_type(VALUE self)
+static VALUE zetta_fs_get_type(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -518,7 +518,7 @@ static VALUE my_zfs_get_type(VALUE self)
  * - Ensure that the given property name is a valid zfs dataset property.
  *
  */
-static VALUE my_zfs_get_prop(VALUE self, VALUE name)
+static VALUE zetta_fs_get_prop(VALUE self, VALUE name)
 {
   zfs_handle_t *zfs_handle;
 
@@ -559,7 +559,7 @@ static VALUE my_zfs_get_prop(VALUE self, VALUE name)
  *
  */
 
-static VALUE my_zfs_set_prop(VALUE self, VALUE propname, VALUE propval)
+static VALUE zetta_fs_set_prop(VALUE self, VALUE propname, VALUE propval)
 {
   zfs_handle_t *zfs_handle;
 
@@ -609,7 +609,7 @@ static VALUE my_zfs_set_prop(VALUE self, VALUE propname, VALUE propval)
  * - Support additional types for user properties.
  *
  */
-static VALUE my_zfs_get_user_prop(VALUE self, VALUE name)
+static VALUE zetta_fs_get_user_prop(VALUE self, VALUE name)
 {
   zfs_handle_t *zfs_handle;
 
@@ -651,7 +651,7 @@ static VALUE my_zfs_get_user_prop(VALUE self, VALUE name)
  * - Actually, return -1 on failure, 0 on succes, should return false/true.
  * - Enforce Types, return <code>ArgumentError</code> when appropriated.
  */
-static VALUE my_zfs_rename(VALUE self, VALUE target, VALUE recursive)
+static VALUE zetta_fs_rename(VALUE self, VALUE target, VALUE recursive)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -679,7 +679,7 @@ static VALUE my_zfs_rename(VALUE self, VALUE target, VALUE recursive)
  * is not an instance of <code>LibZfs</code>.
  *
  */
-static VALUE my_zfs_create(int argc, VALUE *argv, VALUE klass)
+static VALUE zetta_fs_create(int argc, VALUE *argv, VALUE klass)
 {
   VALUE fs_name, libzfs_handle, types;
   libzfs_handle_t *libhandle;
@@ -698,7 +698,7 @@ static VALUE my_zfs_create(int argc, VALUE *argv, VALUE klass)
     rb_raise(rb_eTypeError, "ZFS Dataset type must be an integer.");
   }
 
-  libzfs_handle = (argc == 2) ? my_libzfs_get_handle() : argv[2];
+  libzfs_handle = (argc == 2) ? zetta_lib_get_handle() : argv[2];
 
   if(CLASS_OF(libzfs_handle) != rb_const_get(rb_cObject, rb_intern("LibZfs"))) {
     rb_raise(rb_eTypeError, "ZFS Lib handle must be an instance of LibZfs.");
@@ -737,7 +737,7 @@ static VALUE my_zfs_create(int argc, VALUE *argv, VALUE klass)
  * is not an instance of <code>LibZfs</code>.
  *
  */
-static VALUE my_zfs_dataset_exists(int argc, VALUE *argv, VALUE klass)
+static VALUE zetta_fs_dataset_exists(int argc, VALUE *argv, VALUE klass)
 {
   VALUE fs_name, libzfs_handle, types;
   libzfs_handle_t *libhandle;
@@ -756,7 +756,7 @@ static VALUE my_zfs_dataset_exists(int argc, VALUE *argv, VALUE klass)
     rb_raise(rb_eTypeError, "ZFS Dataset type must be an integer.");
   }
 
-  libzfs_handle = (argc == 2) ? my_libzfs_get_handle() : argv[2];
+  libzfs_handle = (argc == 2) ? zetta_lib_get_handle() : argv[2];
 
   if(CLASS_OF(libzfs_handle) != rb_const_get(rb_cObject, rb_intern("LibZfs"))) {
     rb_raise(rb_eTypeError, "ZFS Lib handle must be an instance of LibZfs.");
@@ -785,7 +785,7 @@ static VALUE my_zfs_dataset_exists(int argc, VALUE *argv, VALUE klass)
  * is not an instance of <code>LibZfs</code>.
  *
  */
-static VALUE my_zfs_snapshot(int argc, VALUE *argv, VALUE klass)
+static VALUE zetta_fs_snapshot(int argc, VALUE *argv, VALUE klass)
 {
   VALUE snapshot_name, libzfs_handle;
   libzfs_handle_t *libhandle;
@@ -800,7 +800,7 @@ static VALUE my_zfs_snapshot(int argc, VALUE *argv, VALUE klass)
     rb_raise(rb_eTypeError, "Snapshot name must be a string.");
   }
 
-  libzfs_handle = (argc == 1) ? my_libzfs_get_handle() : argv[1];
+  libzfs_handle = (argc == 1) ? zetta_lib_get_handle() : argv[1];
 
   if(CLASS_OF(libzfs_handle) != rb_const_get(rb_cObject, rb_intern("LibZfs"))) {
     rb_raise(rb_eTypeError, "ZFS Lib handle must be an instance of LibZfs.");
@@ -834,7 +834,7 @@ static VALUE my_zfs_snapshot(int argc, VALUE *argv, VALUE klass)
  * instance is not a Filesystem or Volume.
  *
  */
-static VALUE my_zfs_rollback(VALUE self, VALUE snapshot, VALUE force)
+static VALUE zetta_fs_rollback(VALUE self, VALUE snapshot, VALUE force)
 {
   zfs_handle_t *zfs_handle, *snapshot_zfs_handle;
 
@@ -877,7 +877,7 @@ static VALUE my_zfs_rollback(VALUE self, VALUE snapshot, VALUE force)
  * NOTE: This method cannot be <i>clone</i> due to obvious Ruby reasons.
  *
  */
-static VALUE my_zfs_clone(VALUE self, VALUE clone_name)
+static VALUE zetta_fs_clone(VALUE self, VALUE clone_name)
 {
   zfs_handle_t *zfs_handle;
 
@@ -909,7 +909,7 @@ static VALUE my_zfs_clone(VALUE self, VALUE clone_name)
  * Promote the current clone to be no longer dependent on its origin.
  *
  */
-static VALUE my_zfs_promote(VALUE self)
+static VALUE zetta_fs_promote(VALUE self)
 {
   zfs_handle_t *zfs_handle;
 
@@ -918,7 +918,7 @@ static VALUE my_zfs_promote(VALUE self)
   return (zfs_promote(zfs_handle) == 0) ? Qtrue : Qfalse;
 }
 
-static VALUE my_zfs_is_shared(VALUE self)
+static VALUE zetta_fs_is_shared(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -926,7 +926,7 @@ static VALUE my_zfs_is_shared(VALUE self)
   return zfs_is_shared(zfs_handle) ? Qtrue : Qfalse;
 }
 
-static VALUE my_zfs_share(VALUE self)
+static VALUE zetta_fs_share(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -934,7 +934,7 @@ static VALUE my_zfs_share(VALUE self)
   return INT2NUM(zfs_share(zfs_handle));
 }
 
-static VALUE my_zfs_unshare(VALUE self)
+static VALUE zetta_fs_unshare(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -942,7 +942,7 @@ static VALUE my_zfs_unshare(VALUE self)
   return INT2NUM(zfs_unshare(zfs_handle));
 }
 
-static VALUE my_zfs_nfs_share_name(VALUE self)
+static VALUE zetta_fs_nfs_share_name(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   char *path;
@@ -951,7 +951,7 @@ static VALUE my_zfs_nfs_share_name(VALUE self)
   return zfs_is_shared_nfs(zfs_handle, &path) ? rb_str_new2(path) : Qnil;
 }
 
-static VALUE my_zfs_is_shared_nfs(VALUE self)
+static VALUE zetta_fs_is_shared_nfs(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   char *path;
@@ -959,7 +959,7 @@ static VALUE my_zfs_is_shared_nfs(VALUE self)
   return zfs_is_shared_nfs(zfs_handle, &path) ? Qtrue : Qfalse;
 }
 
-static VALUE my_zfs_share_nfs(VALUE self)
+static VALUE zetta_fs_share_nfs(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -967,7 +967,7 @@ static VALUE my_zfs_share_nfs(VALUE self)
   return INT2NUM(zfs_share_nfs(zfs_handle));
 }
 
-static VALUE my_zfs_unshare_nfs(VALUE self)
+static VALUE zetta_fs_unshare_nfs(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -976,7 +976,7 @@ static VALUE my_zfs_unshare_nfs(VALUE self)
 }
 
 #ifdef SPA_VERSION_9
-static VALUE my_zfs_is_shared_smb(VALUE self)
+static VALUE zetta_fs_is_shared_smb(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   char *path;
@@ -984,7 +984,7 @@ static VALUE my_zfs_is_shared_smb(VALUE self)
   return zfs_is_shared_smb(zfs_handle, &path) ? Qtrue : Qfalse;
 }
 
-static VALUE my_zfs_smb_share_name(VALUE self)
+static VALUE zetta_fs_smb_share_name(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   char *path;
@@ -993,7 +993,7 @@ static VALUE my_zfs_smb_share_name(VALUE self)
   return zfs_is_shared_smb(zfs_handle, &path) ? rb_str_new2(path) : Qnil;
 }
 
-static VALUE my_zfs_share_smb(VALUE self)
+static VALUE zetta_fs_share_smb(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -1001,7 +1001,7 @@ static VALUE my_zfs_share_smb(VALUE self)
   return INT2NUM(zfs_share_smb(zfs_handle));
 }
 
-static VALUE my_zfs_unshare_smb(VALUE self)
+static VALUE zetta_fs_unshare_smb(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -1011,7 +1011,7 @@ static VALUE my_zfs_unshare_smb(VALUE self)
 #endif
 
 #ifndef SPA_VERSION_24
-static VALUE my_zfs_is_shared_iscsi(VALUE self)
+static VALUE zetta_fs_is_shared_iscsi(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -1019,7 +1019,7 @@ static VALUE my_zfs_is_shared_iscsi(VALUE self)
   return zfs_is_shared_iscsi(zfs_handle) ? Qtrue : Qfalse;
 }
 
-static VALUE my_zfs_share_iscsi(VALUE self)
+static VALUE zetta_fs_share_iscsi(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -1027,7 +1027,7 @@ static VALUE my_zfs_share_iscsi(VALUE self)
   return INT2NUM(zfs_share_iscsi(zfs_handle));
 }
 
-static VALUE my_zfs_unshare_iscsi(VALUE self)
+static VALUE zetta_fs_unshare_iscsi(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -1047,7 +1047,7 @@ static VALUE my_zfs_unshare_iscsi(VALUE self)
  * - Actually, not taking into consideration anything but default mountpoints
  *
  */
-static VALUE my_zfs_is_mounted(VALUE self)
+static VALUE zetta_fs_is_mounted(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -1069,7 +1069,7 @@ static VALUE my_zfs_is_mounted(VALUE self)
  *   error for failures.
  *
  */
-static VALUE my_zfs_mount(VALUE self)
+static VALUE zetta_fs_mount(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -1091,7 +1091,7 @@ static VALUE my_zfs_mount(VALUE self)
  *   error for failures.
  *
  */
-static VALUE my_zfs_unmount(VALUE self)
+static VALUE zetta_fs_unmount(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -1115,7 +1115,7 @@ static VALUE my_zfs_unmount(VALUE self)
  *   error for failures.
  *
  */
-static VALUE my_zfs_destroy(VALUE self)
+static VALUE zetta_fs_destroy(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
@@ -1128,7 +1128,7 @@ static VALUE my_zfs_destroy(VALUE self)
 #endif
 }
 
-static int my_zfs_iter_f(zfs_handle_t *handle, void *klass)
+static int zetta_fs_iter_f(zfs_handle_t *handle, void *klass)
 {
   rb_yield(Data_Wrap_Struct((VALUE)klass, 0, zfs_close, handle));
   return 0;
@@ -1149,12 +1149,12 @@ static int my_zfs_iter_f(zfs_handle_t *handle, void *klass)
  * is not an instance of <code>LibZfs</code>.
  *
  */
-static VALUE my_zfs_iter_root(int argc, VALUE *argv, VALUE klass)
+static VALUE zetta_fs_iter_root(int argc, VALUE *argv, VALUE klass)
 {
   VALUE libzfs_handle;
   libzfs_handle_t *libhandle;
 
-  libzfs_handle = (argc == 0) ? my_libzfs_get_handle() : argv[0];
+  libzfs_handle = (argc == 0) ? zetta_lib_get_handle() : argv[0];
 
   if(CLASS_OF(libzfs_handle) != rb_const_get(rb_cObject, rb_intern("LibZfs"))) {
     rb_raise(rb_eTypeError, "ZFS Lib handle must be an instance of LibZfs.");
@@ -1162,7 +1162,7 @@ static VALUE my_zfs_iter_root(int argc, VALUE *argv, VALUE klass)
 
   Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
 
-  zfs_iter_root(libhandle, my_zfs_iter_f, (void *)klass);
+  zfs_iter_root(libhandle, zetta_fs_iter_f, (void *)klass);
 
   return Qnil;
 }
@@ -1179,13 +1179,13 @@ static VALUE my_zfs_iter_root(int argc, VALUE *argv, VALUE klass)
  *    end
  *
  */
-static VALUE my_zfs_iter_filesystems(VALUE self)
+static VALUE zetta_fs_iter_filesystems(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   VALUE klass = rb_class_of(self);
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
 
-  zfs_iter_filesystems(zfs_handle, my_zfs_iter_f, (void *)klass);
+  zfs_iter_filesystems(zfs_handle, zetta_fs_iter_f, (void *)klass);
 
   return Qnil;
 }
@@ -1202,13 +1202,13 @@ static VALUE my_zfs_iter_filesystems(VALUE self)
  *    end
  *
  */
-static VALUE my_zfs_iter_snapshots(VALUE self)
+static VALUE zetta_fs_iter_snapshots(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   VALUE klass = rb_class_of(self);
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
 
-  zfs_iter_snapshots(zfs_handle, my_zfs_iter_f, (void *)klass);
+  zfs_iter_snapshots(zfs_handle, zetta_fs_iter_f, (void *)klass);
 
   return Qnil;
 }
@@ -1225,13 +1225,13 @@ static VALUE my_zfs_iter_snapshots(VALUE self)
  *    end
  *
  */
-static VALUE my_zfs_iter_dependents(VALUE self)
+static VALUE zetta_fs_iter_dependents(VALUE self)
 {
   zfs_handle_t *zfs_handle;
   VALUE klass = rb_class_of(self);
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
   // TODO: Allow recursion should be configurable by user?
-  zfs_iter_dependents(zfs_handle, B_TRUE, my_zfs_iter_f, (void *)klass);
+  zfs_iter_dependents(zfs_handle, B_TRUE, zetta_fs_iter_f, (void *)klass);
 
   return Qnil;
 }
@@ -1273,7 +1273,7 @@ static VALUE my_zfs_iter_dependents(VALUE self)
  * methods like <code>Zpool</code> and <code>ZFS</code> initializers.
  *
  */
-static VALUE my_libzfs_alloc(VALUE klass)
+static VALUE zetta_lib_alloc(VALUE klass)
 {
   libzfs_handle_t *handle = libzfs_init();
   return Data_Wrap_Struct(klass, 0, libzfs_fini, handle);
@@ -1287,14 +1287,14 @@ static VALUE my_libzfs_alloc(VALUE klass)
  * otherwise, 0.
  *
  */
-static VALUE my_libzfs_errno(VALUE self)
+static VALUE zetta_lib_errno(VALUE self)
 {
   libzfs_handle_t *handle;
   Data_Get_Struct(self, libzfs_handle_t, handle);
   return INT2NUM(libzfs_errno(handle));
 }
 
-static VALUE my_libzfs_print_on_error(VALUE self, VALUE b)
+static VALUE zetta_lib_print_on_error(VALUE self, VALUE b)
 {
   libzfs_handle_t *handle;
   Data_Get_Struct(self, libzfs_handle_t, handle);
@@ -1311,7 +1311,7 @@ static VALUE my_libzfs_print_on_error(VALUE self, VALUE b)
  * triggered the error. Otherwise, return an empty string.
  *
  */
-static VALUE my_libzfs_error_action(VALUE self)
+static VALUE zetta_lib_error_action(VALUE self)
 {
   libzfs_handle_t *handle;
   Data_Get_Struct(self, libzfs_handle_t, handle);
@@ -1328,7 +1328,7 @@ static VALUE my_libzfs_error_action(VALUE self)
  * return the string +"no error"+.
  *
  */
-static VALUE my_libzfs_error_description(VALUE self)
+static VALUE zetta_lib_error_description(VALUE self)
 {
   libzfs_handle_t *handle;
   Data_Get_Struct(self, libzfs_handle_t, handle);
@@ -1351,7 +1351,7 @@ static VALUE my_libzfs_error_description(VALUE self)
  * instance is required and none is supplied on the method call.
  *
  */
-static VALUE zfsrb_lib_handle(VALUE klass)
+static VALUE zetta_lib_handle(VALUE klass)
 {
   if( rb_cv_get(klass, "@@handle") == Qnil ) {
     VALUE args[] = {};
@@ -1550,82 +1550,82 @@ void Init_libzfs()
   Init_libzfs_consts();
   Init_libzfs_errors();
 
-  rb_define_alloc_func(cLibZfs, my_libzfs_alloc);
+  rb_define_alloc_func(cLibZfs, zetta_lib_alloc);
   rb_define_class_variable(cLibZfs, "@@handle", Qnil);
-  rb_define_singleton_method(cLibZfs, "handle", zfsrb_lib_handle, 0);
-  rb_define_method(cLibZfs, "errno", my_libzfs_errno, 0);
-  rb_define_method(cLibZfs, "print_on_error", my_libzfs_print_on_error, 1);
-  rb_define_method(cLibZfs, "error_action", my_libzfs_error_action, 0);
-  rb_define_method(cLibZfs, "error_description", my_libzfs_error_description, 0);
+  rb_define_singleton_method(cLibZfs, "handle", zetta_lib_handle, 0);
+  rb_define_method(cLibZfs, "errno", zetta_lib_errno, 0);
+  rb_define_method(cLibZfs, "print_on_error", zetta_lib_print_on_error, 1);
+  rb_define_method(cLibZfs, "error_action", zetta_lib_error_action, 0);
+  rb_define_method(cLibZfs, "error_description", zetta_lib_error_description, 0);
 
-  rb_define_singleton_method(cZpool, "new", my_zpool_new, -1);
-  rb_define_method(cZpool, "name", my_zpool_get_name, 0);
-  rb_define_method(cZpool, "get", my_zpool_get_prop, 1);
-  rb_define_method(cZpool, "set", my_zpool_set_prop, 2);
-  rb_define_method(cZpool, "guid", my_zpool_get_guid, 0);
-  rb_define_method(cZpool, "space_used", my_zpool_get_space_used, 0);
-  rb_define_method(cZpool, "space_total", my_zpool_get_space_total, 0);
-  rb_define_method(cZpool, "state", my_zpool_get_state, 0);
-  rb_define_method(cZpool, "version", my_zpool_get_version, 0);
-  rb_define_method(cZpool, "libzfs_handle", my_zpool_get_handle, 0);
-  // rb_define_method(cZpool, "destroy!", my_zpool_destroy, 0);
+  rb_define_singleton_method(cZpool, "new", zetta_pool_new, -1);
+  rb_define_method(cZpool, "name", zetta_pool_get_name, 0);
+  rb_define_method(cZpool, "get", zetta_pool_get_prop, 1);
+  rb_define_method(cZpool, "set", zetta_pool_set_prop, 2);
+  rb_define_method(cZpool, "guid", zetta_pool_get_guid, 0);
+  rb_define_method(cZpool, "space_used", zetta_pool_get_space_used, 0);
+  rb_define_method(cZpool, "space_total", zetta_pool_get_space_total, 0);
+  rb_define_method(cZpool, "state", zetta_pool_get_state, 0);
+  rb_define_method(cZpool, "version", zetta_pool_get_version, 0);
+  rb_define_method(cZpool, "libzfs_handle", zetta_pool_get_handle, 0);
+  // rb_define_method(cZpool, "destroy!", zetta_pool_destroy, 0);
 
-  rb_define_singleton_method(cZpool, "each", my_zpool_iter, -1);
+  rb_define_singleton_method(cZpool, "each", zetta_pool_iter, -1);
 
-  rb_define_singleton_method(cZFS, "new", my_zfs_new, -1);
-  rb_define_method(cZFS, "libzfs_handle", my_zfs_get_handle, 0);
-  rb_define_method(cZFS, "name", my_zfs_get_name, 0);
-  rb_define_method(cZFS, "fs_type", my_zfs_get_type, 0);
-  rb_define_method(cZFS, "rename", my_zfs_rename, 2);
+  rb_define_singleton_method(cZFS, "new", zetta_fs_new, -1);
+  rb_define_method(cZFS, "libzfs_handle", zetta_fs_get_handle, 0);
+  rb_define_method(cZFS, "name", zetta_fs_get_name, 0);
+  rb_define_method(cZFS, "fs_type", zetta_fs_get_type, 0);
+  rb_define_method(cZFS, "rename", zetta_fs_rename, 2);
   // Sharing:
-  rb_define_method(cZFS, "is_shared?", my_zfs_is_shared, 0);
-  rb_define_method(cZFS, "share!", my_zfs_share, 0);
-  rb_define_method(cZFS, "unshare!", my_zfs_unshare, 0);
+  rb_define_method(cZFS, "is_shared?", zetta_fs_is_shared, 0);
+  rb_define_method(cZFS, "share!", zetta_fs_share, 0);
+  rb_define_method(cZFS, "unshare!", zetta_fs_unshare, 0);
   // NFS:
-  rb_define_method(cZFS, "nfs_share_name", my_zfs_nfs_share_name, 0);
-  rb_define_method(cZFS, "is_shared_nfs?", my_zfs_is_shared_nfs, 0);
-  rb_define_method(cZFS, "share_nfs!", my_zfs_share_nfs, 0);
-  rb_define_method(cZFS, "unshare_nfs!", my_zfs_unshare_nfs, 0);
+  rb_define_method(cZFS, "nfs_share_name", zetta_fs_nfs_share_name, 0);
+  rb_define_method(cZFS, "is_shared_nfs?", zetta_fs_is_shared_nfs, 0);
+  rb_define_method(cZFS, "share_nfs!", zetta_fs_share_nfs, 0);
+  rb_define_method(cZFS, "unshare_nfs!", zetta_fs_unshare_nfs, 0);
 
 
   // SMB:
 #ifdef SPA_VERSION_9
-  rb_define_method(cZFS, "smb_share_name", my_zfs_smb_share_name, 0);
-  rb_define_method(cZFS, "is_shared_smb?", my_zfs_is_shared_smb, 0);
-  rb_define_method(cZFS, "share_smb!", my_zfs_share_smb, 0);
-  rb_define_method(cZFS, "unshare_smb!", my_zfs_unshare_smb, 0);
+  rb_define_method(cZFS, "smb_share_name", zetta_fs_smb_share_name, 0);
+  rb_define_method(cZFS, "is_shared_smb?", zetta_fs_is_shared_smb, 0);
+  rb_define_method(cZFS, "share_smb!", zetta_fs_share_smb, 0);
+  rb_define_method(cZFS, "unshare_smb!", zetta_fs_unshare_smb, 0);
 #endif
 
   // iSCSI:
 #ifndef SPA_VERSION_24
-  rb_define_method(cZFS, "is_shared_iscsi?", my_zfs_is_shared_iscsi, 0);
-  rb_define_method(cZFS, "share_iscsi!", my_zfs_share_iscsi, 0);
-  rb_define_method(cZFS, "unshare_iscsi!", my_zfs_unshare_iscsi, 0);
+  rb_define_method(cZFS, "is_shared_iscsi?", zetta_fs_is_shared_iscsi, 0);
+  rb_define_method(cZFS, "share_iscsi!", zetta_fs_share_iscsi, 0);
+  rb_define_method(cZFS, "unshare_iscsi!", zetta_fs_unshare_iscsi, 0);
 #endif
 
   // Exist, Create, Destroy:
-  rb_define_singleton_method(cZFS, "create", my_zfs_create, -1);
+  rb_define_singleton_method(cZFS, "create", zetta_fs_create, -1);
   // These exist? and exists? are alias.
-  rb_define_singleton_method(cZFS, "exists?", my_zfs_dataset_exists, -1);
-  rb_define_singleton_method(cZFS, "exist?", my_zfs_dataset_exists, -1);
-  rb_define_method(cZFS, "destroy!", my_zfs_destroy, 0);
+  rb_define_singleton_method(cZFS, "exists?", zetta_fs_dataset_exists, -1);
+  rb_define_singleton_method(cZFS, "exist?", zetta_fs_dataset_exists, -1);
+  rb_define_method(cZFS, "destroy!", zetta_fs_destroy, 0);
   // Properties:
-  rb_define_method(cZFS, "get", my_zfs_get_prop, 1);
-  rb_define_method(cZFS, "get_user_prop", my_zfs_get_user_prop, 1);
-  rb_define_method(cZFS, "set", my_zfs_set_prop, 2);
+  rb_define_method(cZFS, "get", zetta_fs_get_prop, 1);
+  rb_define_method(cZFS, "get_user_prop", zetta_fs_get_user_prop, 1);
+  rb_define_method(cZFS, "set", zetta_fs_set_prop, 2);
   // ZFS Iteration:
-  rb_define_singleton_method(cZFS, "each", my_zfs_iter_root, -1);
-  rb_define_method(cZFS, "each_filesystem", my_zfs_iter_filesystems, 0);
-  rb_define_method(cZFS, "each_snapshot", my_zfs_iter_snapshots, 0);
-  rb_define_method(cZFS, "each_dependent", my_zfs_iter_dependents, 0);
+  rb_define_singleton_method(cZFS, "each", zetta_fs_iter_root, -1);
+  rb_define_method(cZFS, "each_filesystem", zetta_fs_iter_filesystems, 0);
+  rb_define_method(cZFS, "each_snapshot", zetta_fs_iter_snapshots, 0);
+  rb_define_method(cZFS, "each_dependent", zetta_fs_iter_dependents, 0);
   // Snapshots:
-  rb_define_singleton_method(cZFS, "snapshot", my_zfs_snapshot, -1);
-  rb_define_method(cZFS, "rollback", my_zfs_rollback, 2);
+  rb_define_singleton_method(cZFS, "snapshot", zetta_fs_snapshot, -1);
+  rb_define_method(cZFS, "rollback", zetta_fs_rollback, 2);
   // Clones:
-  rb_define_method(cZFS, "clone!", my_zfs_clone, 1);
-  rb_define_method(cZFS, "promote", my_zfs_promote, 0);
+  rb_define_method(cZFS, "clone!", zetta_fs_clone, 1);
+  rb_define_method(cZFS, "promote", zetta_fs_promote, 0);
   // Mount/Unmount:
-  rb_define_method(cZFS, "is_mounted?", my_zfs_is_mounted, 0);
-  rb_define_method(cZFS, "mount", my_zfs_mount, 0);
-  rb_define_method(cZFS, "unmount", my_zfs_unmount, 0);
+  rb_define_method(cZFS, "is_mounted?", zetta_fs_is_mounted, 0);
+  rb_define_method(cZFS, "mount", zetta_fs_mount, 0);
+  rb_define_method(cZFS, "unmount", zetta_fs_unmount, 0);
 }

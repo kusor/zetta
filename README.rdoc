@@ -179,5 +179,5 @@ Versions:
     zfs release
     zfs hold
 
-* Some refactoring: my_zfs_dataset_exists, my_zfs_create and my_zfs_new share a
+* Some refactoring: zetta_fs_dataset_exists, zetta_fs_create and zetta_fs_new share a
   lot of code which could be using the same C function.
