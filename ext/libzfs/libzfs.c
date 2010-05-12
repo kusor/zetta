@@ -1468,6 +1468,79 @@ static void Init_libzfs_consts()
   rb_define_const(mPoolState, "POTENTIALLY_ACTIVE", INT2NUM(POOL_STATE_POTENTIALLY_ACTIVE));
 }
 
+static void Init_libzfs_errors()
+{
+  VALUE mZfsError = rb_define_module("ZfsError");
+  VALUE cZfsError = rb_define_class_under(mZfsError, "Error", rb_eStandardError);
+
+  VALUE cZfsNoMemoryError = rb_define_class_under(mZfsError, "NoMemoryError", cZfsError);
+  VALUE cZfsInvalidPropertyError = rb_define_class_under(mZfsError, "InvalidPropertyError", cZfsError);
+  VALUE cZfsReadOnlyPropertyError = rb_define_class_under(mZfsError, "ReadOnlyPropertyError", cZfsError);
+  VALUE cZfsInvalidPropertyTypeError = rb_define_class_under(mZfsError, "InvalidPropertyTypeError", cZfsError);
+  VALUE cZfsNonInheritablePropertyError = rb_define_class_under(mZfsError, "NonInheritablePropertyError", cZfsError);
+  VALUE cZfsPropertySpaceError = rb_define_class_under(mZfsError, "PropertySpaceError", cZfsError);
+  VALUE cZfsInvalidDatasetTypeError = rb_define_class_under(mZfsError, "InvalidDatasetTypeError", cZfsError);
+  VALUE cZfsDatasetBusyError = rb_define_class_under(mZfsError, "DatasetBusyError", cZfsError);
+  VALUE cZfsDatasetExistsError = rb_define_class_under(mZfsError, "DatasetExistsError", cZfsError);
+  VALUE cZfsNoentError = rb_define_class_under(mZfsError, "NoentError", cZfsError);
+  VALUE cZfsBadStreamError = rb_define_class_under(mZfsError, "BadStreamError", cZfsError);
+  VALUE cZfsDatasetReadOnlyError = rb_define_class_under(mZfsError, "DatasetReadOnlyError", cZfsError);
+  VALUE cZfsVolumeTooBigError = rb_define_class_under(mZfsError, "VolumeTooBigError", cZfsError);
+  VALUE cZfsInvalidNameError = rb_define_class_under(mZfsError, "InvalidNameError", cZfsError);
+  VALUE cZfsBadRestoreError = rb_define_class_under(mZfsError, "BadRestoreError", cZfsError);
+  VALUE cZfsBadBackupError = rb_define_class_under(mZfsError, "BadBackupError", cZfsError);
+  VALUE cZfsBadTargetError = rb_define_class_under(mZfsError, "BadTargetError", cZfsError);
+  VALUE cZfsNoDeviceError = rb_define_class_under(mZfsError, "NoDeviceError", cZfsError);
+  VALUE cZfsBadDeviceError = rb_define_class_under(mZfsError, "BadDeviceError", cZfsError);
+  VALUE cZfsNoReplicasError = rb_define_class_under(mZfsError, "NoReplicasError", cZfsError);
+  VALUE cZfsResilveringError = rb_define_class_under(mZfsError, "ResilveringError", cZfsError);
+  VALUE cZfsBadVersionError = rb_define_class_under(mZfsError, "BadVersionError", cZfsError);
+  VALUE cZfsPoolUnavailableError = rb_define_class_under(mZfsError, "PoolUnavailableError", cZfsError);
+  VALUE cZfsDeviceOverflowError = rb_define_class_under(mZfsError, "DeviceOverflowError", cZfsError);
+  VALUE cZfsBadPathError = rb_define_class_under(mZfsError, "BadPathError", cZfsError);
+  VALUE cZfsCrossTargetError = rb_define_class_under(mZfsError, "CrossTargetError", cZfsError);
+  VALUE cZfsZonedError = rb_define_class_under(mZfsError, "ZonedError", cZfsError);
+  VALUE cZfsMountFailedError = rb_define_class_under(mZfsError, "MountFailedError", cZfsError);
+  VALUE cZfsUnmountFailedError = rb_define_class_under(mZfsError, "UnmountFailedError", cZfsError);
+  VALUE cZfsUnshareNfsFailedError = rb_define_class_under(mZfsError, "UnshareNfsFailedError", cZfsError);
+  VALUE cZfsShareNfsFailedError = rb_define_class_under(mZfsError, "ShareNfsFailedError", cZfsError);
+  VALUE cZfsUnshareSmbFailedError = rb_define_class_under(mZfsError, "UnshareSmbFailedError", cZfsError);
+  VALUE cZfsShareSmbFailedError = rb_define_class_under(mZfsError, "ShareSmbFailedError", cZfsError);
+  VALUE cZfsPermError = rb_define_class_under(mZfsError, "PermError", cZfsError);
+  VALUE cZfsNospcError = rb_define_class_under(mZfsError, "NospcError", cZfsError);
+  VALUE cZfsFaultError = rb_define_class_under(mZfsError, "FaultError", cZfsError);
+  VALUE cZfsIOError = rb_define_class_under(mZfsError, "IOError", cZfsError);
+  VALUE cZfsINTRError = rb_define_class_under(mZfsError, "INTRError", cZfsError);
+  VALUE cZfsIsSpareError = rb_define_class_under(mZfsError, "IsSpareError", cZfsError);
+  VALUE cZfsInvalidConfigError = rb_define_class_under(mZfsError, "InvalidConfigError", cZfsError);
+  VALUE cZfsRecursiveError = rb_define_class_under(mZfsError, "RecursiveError", cZfsError);
+  VALUE cZfsNoHistoryError = rb_define_class_under(mZfsError, "NoHistoryError", cZfsError);
+  VALUE cZfsPoolPropsError = rb_define_class_under(mZfsError, "PoolPropsError", cZfsError);
+  VALUE cZfsPoolNotSupportedError = rb_define_class_under(mZfsError, "PoolNotSupportedError", cZfsError);
+  VALUE cZfsPoolInvalidArgError = rb_define_class_under(mZfsError, "PoolInvalidArgError", cZfsError);
+  VALUE cZfsNameTooLongError = rb_define_class_under(mZfsError, "NameTooLongError", cZfsError);
+  VALUE cZfsOpenFailedError = rb_define_class_under(mZfsError, "OpenFailedError", cZfsError);
+  VALUE cZfsNoCapError = rb_define_class_under(mZfsError, "NoCapError", cZfsError);
+  VALUE cZfsLabelFailedError = rb_define_class_under(mZfsError, "LabelFailedError", cZfsError);
+  VALUE cZfsBadWhoError = rb_define_class_under(mZfsError, "BadWhoError", cZfsError);
+  VALUE cZfsBadPermError = rb_define_class_under(mZfsError, "BadPermError", cZfsError);
+  VALUE cZfsBadPermSetError = rb_define_class_under(mZfsError, "BadPermSetError", cZfsError);
+  VALUE cZfsNoDelegationError = rb_define_class_under(mZfsError, "NoDelegationError", cZfsError);
+  VALUE cZfsPermReadOnlyError = rb_define_class_under(mZfsError, "PermReadOnlyError", cZfsError);
+  VALUE cZfsBadCacheError = rb_define_class_under(mZfsError, "BadCacheError", cZfsError);
+  VALUE cZfsIsL2CacheError = rb_define_class_under(mZfsError, "IsL2CacheError", cZfsError);
+  VALUE cZfsVdevNotSupportedError = rb_define_class_under(mZfsError, "VdevNotSupportedError", cZfsError);
+  VALUE cZfsNotSupportedError = rb_define_class_under(mZfsError, "NotSupportedError", cZfsError);
+  VALUE cZfsActiveSpareError = rb_define_class_under(mZfsError, "ActiveSpareError", cZfsError);
+  VALUE cZfsUnplayedLogsError = rb_define_class_under(mZfsError, "UnplayedLogsError", cZfsError);
+  VALUE cZfsReftagReleError = rb_define_class_under(mZfsError, "ReftagReleError", cZfsError);
+  VALUE cZfsReftagHoldError = rb_define_class_under(mZfsError, "ReftagHoldError", cZfsError);
+  VALUE cZfsTagTooLongError = rb_define_class_under(mZfsError, "TagTooLongError", cZfsError);
+  VALUE cZfsPipeFailedError = rb_define_class_under(mZfsError, "PipeFailedError", cZfsError);
+  VALUE cZfsThreadCreateFailedError = rb_define_class_under(mZfsError, "ThreadCreateFailedError", cZfsError);
+  VALUE cZfsPostSplitOnlineError = rb_define_class_under(mZfsError, "PostSplitOnlineError", cZfsError);
+}
+
 void Init_libzfs()
 {
   VALUE cLibZfs = rb_define_class("LibZfs", rb_cObject);
@@ -1475,6 +1548,7 @@ void Init_libzfs()
   VALUE cZFS = rb_define_class("ZFS", rb_cObject);
 
   Init_libzfs_consts();
+  Init_libzfs_errors();
 
   rb_define_alloc_func(cLibZfs, my_libzfs_alloc);
   rb_define_class_variable(cLibZfs, "@@handle", Qnil);
