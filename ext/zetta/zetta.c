@@ -169,7 +169,9 @@ static VALUE zetta_pool_get_prop(VALUE self, VALUE name)
     return ULL2NUM(zpool_get_prop_int(zpool_handle, zpool_prop, NULL));
   } else {
     char propval[ZPOOL_MAXNAMELEN];
-    zpool_get_prop(zpool_handle, zpool_prop, propval, sizeof (propval), NULL);
+    if ( zpool_get_prop(zpool_handle, zpool_prop, propval, sizeof (propval), NULL) != 0 ) {
+      return Qnil;
+    }
     return ( strcmp( propval, "-" ) == 0 ) ? Qnil: rb_str_new2(propval);
   }
 }
@@ -537,8 +539,10 @@ static VALUE zetta_fs_get_prop(VALUE self, VALUE name)
 
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
 
-  zfs_prop_get(zfs_handle, zfs_prop, propval, sizeof(propval), NULL, NULL, 0, B_FALSE);
-  return rb_str_new2(propval);
+  if ( zfs_prop_get(zfs_handle, zfs_prop, propval, sizeof(propval), NULL, NULL, 0, B_FALSE) != 0 ) {
+    return Qnil;
+  }
+  return ( strcmp( propval, "-" ) == 0 ) ? Qnil: rb_str_new2(propval);
 }
 
 /*

@@ -68,7 +68,8 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert_equal 'filesystem', @zfs.get('type')
     assert ['on','off'].include?(@zfs.get('compression'))
     assert_equal "/tpool/thome", @zfs.get('mountpoint')
-    assert @zfs.get('origin').empty?
+    assert_nil @zfs.get('origin')
+    assert_nil @zfs.get('fakeprop')
   end
 
   def test_set_prop
