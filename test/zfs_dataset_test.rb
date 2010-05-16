@@ -74,14 +74,14 @@ class ZfsDatasetTest < Test::Unit::TestCase
 
   def test_set_prop
     @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
-    assert_equal 0, @zfs.set("setuid", 'off')
+    assert @zfs.set("setuid", 'off')
     assert_equal 'off', @zfs.get("setuid")
-    assert_equal 0, @zfs.set("setuid", 'on')
+    assert @zfs.set("setuid", 'on')
     # FIXME: Once I introduce share tests, this fails.
     # (might need to refresh properties?).
     assert_equal 'on', @zfs.get("setuid")
     # We know this is readonly, hence, exception:
-    assert_equal(-1, @zfs.set('creation', Time.now.to_s))
+    assert !@zfs.set('creation', Time.now.to_s)
     assert_not_equal 0, @zlib.errno
     assert_not_equal '', @zlib.error_action
     assert_not_equal "no error", @zlib.error_description
@@ -90,9 +90,9 @@ class ZfsDatasetTest < Test::Unit::TestCase
   def test_userdef_properties
     @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
     assert_equal 'test', @zfs.get_user_prop('zfs_rb:sample')
-    assert_equal 0, @zfs.set('zfs_rb:sample', 'foo')
+    assert @zfs.set('zfs_rb:sample', 'foo')
     assert_equal 'foo', @zfs.get_user_prop('zfs_rb:sample')
-    assert_equal 0, @zfs.set('zfs_rb:sample', 'test')
+    assert @zfs.set('zfs_rb:sample', 'test')
     assert_raise(ArgumentError) { @zfs.get('zfs_rb:sample') }
   end
 
@@ -308,13 +308,13 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert !@zfs.is_shared_nfs?
     assert_equal 'off', @zfs.get("sharenfs")
 
-    assert_equal 0, @zfs.set("sharenfs", 'on')
+    assert @zfs.set("sharenfs", 'on')
     assert_equal 0, @zfs.share_nfs!
     assert @zfs.is_shared_nfs?
 
     assert_equal 0, @zfs.unshare_nfs!
     assert !@zfs.is_shared_nfs?
-    assert_equal 0, @zfs.set("sharenfs", 'off')
+    assert @zfs.set("sharenfs", 'off')
   end
 
   # BUG: Cannot properly share iSCSI, have to investigate.
@@ -325,7 +325,7 @@ class ZfsDatasetTest < Test::Unit::TestCase
       assert !@zfs.is_shared_iscsi?
       assert_equal 'off', @zfs.get("shareiscsi")
       # iSCSI seems to be failing anyway:
-      assert_equal 0, @zfs.set("shareiscsi", 'on')
+      assert @zfs.set("shareiscsi", 'on')
       assert_equal(-1, @zfs.share_iscsi!)
       assert_not_equal 0, @zlib.errno
       # cannot share 'tpool/thome'
@@ -337,7 +337,7 @@ class ZfsDatasetTest < Test::Unit::TestCase
 
       # assert_equal 0, @zfs.unshare_iscsi!
       # assert !@zfs.is_shared_iscsi?
-      assert_equal 0, @zfs.set("shareiscsi", 'off')
+      assert @zfs.set("shareiscsi", 'off')
     end
   end
 
@@ -355,7 +355,7 @@ class ZfsDatasetTest < Test::Unit::TestCase
       assert !@zfs.is_shared_smb?
 
       # Now, we set one of the shared properties:
-      assert_equal 0, @zfs.set("sharesmb", 'on')
+      assert @zfs.set("sharesmb", 'on')
       assert_equal 0, @zfs.share_smb!
       assert @zfs.is_shared_smb?
       # Now, we'll unsare_smb! and use share!
@@ -368,7 +368,7 @@ class ZfsDatasetTest < Test::Unit::TestCase
       assert !@zfs.is_shared_smb?
       assert !@zfs.is_shared?
       # Return everything to its original state:
-      assert_equal 0, @zfs.set("sharesmb", 'off')
+      assert @zfs.set("sharesmb", 'off')
     end
   end
 

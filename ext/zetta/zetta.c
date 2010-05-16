@@ -133,7 +133,7 @@ static VALUE zetta_pool_get_name(VALUE self)
 
 /*
  * call-seq:
- *   @zpool.get('propname')  => string/integer, zpool property value
+ *   @zpool.get('propname')  => string/integer, zpool property value or Nil.
  *
  * Given a zpool property name, return its value.
  * Values for properties +version+ and +guid+ will be integers. Any other
@@ -178,7 +178,7 @@ static VALUE zetta_pool_get_prop(VALUE self, VALUE name)
 
 /*
  * call-seq:
- *   @zpool.set('propname', "propval")  => string/integer, zpool property value
+ *   @zpool.set('propname', "propval")  => Boolean
  *
  * Set the given value for the given zpool property.
  *
@@ -186,8 +186,6 @@ static VALUE zetta_pool_get_prop(VALUE self, VALUE name)
  * is not a <code>String</code>.
  * Raise <code>TypeError</code> when <code>proval</code>
  * is not a <code>String</code>.
- *
- * TODO: Actually, return -1 on failure, 0 on succes, should return false/true
  *
  */
 static VALUE zetta_pool_set_prop(VALUE self, VALUE propname, VALUE propval)
@@ -210,9 +208,7 @@ static VALUE zetta_pool_set_prop(VALUE self, VALUE propname, VALUE propval)
 
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
 
-  // TODO: Should check return value here, and do some true/false return or raise error:
-  // 0 => success, -1 => Failure. Probably return true/false
-  return INT2NUM(zpool_set_prop(zpool_handle, name, val));
+  return ( zpool_set_prop(zpool_handle, name, val) == 0 ) ? Qtrue : Qfalse;
 }
 
 /*
@@ -505,7 +501,7 @@ static VALUE zetta_fs_get_type(VALUE self)
 
 /*
  * call-seq:
- *   @zfs.get('propname')  => string/integer, zfs property value
+ *   @zfs.get('propname')  => string/integer, zfs property value or Nil
  *
  * Given a zfs dataset property name, return its value.
  *
@@ -547,7 +543,7 @@ static VALUE zetta_fs_get_prop(VALUE self, VALUE name)
 
 /*
  * call-seq:
- *   @zfs.set('propname', "propval")  => string/integer, zfs dataset property value
+ *   @zfs.set('propname', "propval")  => Boolean
  *
  * Set the given value for the given zfs dataset property.
  *
@@ -556,10 +552,6 @@ static VALUE zetta_fs_get_prop(VALUE self, VALUE name)
  * is not a <code>String</code>.
  * Raise <code>TypeError</code> when <code>proval</code>
  * is not a <code>String</code>.
- *
- * TODO:
- *
- * - Actually, return -1 on failure, 0 on succes, should return false/true.
  *
  */
 
@@ -582,9 +574,7 @@ static VALUE zetta_fs_set_prop(VALUE self, VALUE propname, VALUE propval)
   char *val = STR2CSTR(propval);
 
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
-  // TODO: Should check return value here, and do some true/false return or raise error:
-  // 0 => success, -1 => Failure. Probably return true/false
-  return INT2NUM(zfs_prop_set(zfs_handle, name, val));
+  return ( zfs_prop_set(zfs_handle, name, val) == 0 ) ? Qtrue : Qfalse;
 }
 
 /*
