@@ -57,7 +57,8 @@ class ZfsDatasetTest < Test::Unit::TestCase
   def test_rename_file_system
     @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
     # rename to itself:
-    assert_equal 0, @zfs.rename('tpool/thome', false)
+    assert @zfs.rename('tpool/thome', false)
+    assert_raise(TypeError) { @zfs.rename(1234, false) }
   end
 
   def test_get_prop

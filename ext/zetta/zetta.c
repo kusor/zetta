@@ -547,7 +547,6 @@ static VALUE zetta_fs_get_prop(VALUE self, VALUE name)
  *
  * Set the given value for the given zfs dataset property.
  *
- *
  * Raise <code>TypeError</code> when <code>propname</code>
  * is not a <code>String</code>.
  * Raise <code>TypeError</code> when <code>proval</code>
@@ -633,24 +632,26 @@ static VALUE zetta_fs_get_user_prop(VALUE self, VALUE name)
 
 /*
  * call-seq:
- *   @zfs.rename('dataset/name', [false|true])  => integer, 0|-1
+ *   @zfs.rename('dataset/name', [false|true])  => Boolean
  *
  * Rename ZFS Dataset using the given <code>dataset_name</code>.
  * When <code>recursive</code> is true, also renames all the children
  * datasets for the current one.
  *
  *
- * TODO:
+ * Raise <code>TypeError</code> when <code>dataset_name</code> is given and it
+ * is not a <code>String</code>.
  *
- * - Actually, return -1 on failure, 0 on succes, should return false/true.
- * - Enforce Types, return <code>ArgumentError</code> when appropriated.
  */
 static VALUE zetta_fs_rename(VALUE self, VALUE target, VALUE recursive)
 {
   zfs_handle_t *zfs_handle;
+  if( TYPE(target) != T_STRING ) {
+    rb_raise(rb_eTypeError, "Target dataset name must be a string.");
+  }
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
 
-  return INT2NUM(zfs_rename(zfs_handle, StringValuePtr(target), RTEST(recursive)));
+  return ( zfs_rename(zfs_handle, StringValuePtr(target), RTEST(recursive)) == 0 ) ? Qtrue : Qfalse;
 }
 
 /*
