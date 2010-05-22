@@ -18,6 +18,10 @@ class LibZfsTest < Test::Unit::TestCase
     assert_equal "no error", @zlib.error_description
   end
 
+  def test_raise_error
+    assert_raise(ZfsError::Error){ @zlib.raise_error }
+  end
+
   def test_toggle_error
     assert_nothing_raised {@zlib.print_on_error(true)}
     assert_nothing_raised {@zlib.print_on_error(false)}

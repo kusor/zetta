@@ -4,6 +4,196 @@
   #include <libzfs.h>
 #endif
 
+// Define Error Classes:
+static VALUE cZfsError = Qnil;
+static VALUE cZfsNoMemoryError = Qnil;
+static VALUE cZfsInvalidPropertyError = Qnil;
+static VALUE cZfsReadOnlyPropertyError = Qnil;
+static VALUE cZfsInvalidPropertyTypeError = Qnil;
+static VALUE cZfsNonInheritablePropertyError = Qnil;
+static VALUE cZfsPropertySpaceError = Qnil;
+static VALUE cZfsInvalidDatasetTypeError = Qnil;
+static VALUE cZfsDatasetBusyError = Qnil;
+static VALUE cZfsDatasetExistsError = Qnil;
+static VALUE cZfsNoentError = Qnil;
+static VALUE cZfsBadStreamError = Qnil;
+static VALUE cZfsDatasetReadOnlyError = Qnil;
+static VALUE cZfsVolumeTooBigError = Qnil;
+static VALUE cZfsInvalidNameError = Qnil;
+static VALUE cZfsBadRestoreError = Qnil;
+static VALUE cZfsBadBackupError = Qnil;
+static VALUE cZfsBadTargetError = Qnil;
+static VALUE cZfsNoDeviceError = Qnil;
+static VALUE cZfsBadDeviceError = Qnil;
+static VALUE cZfsNoReplicasError = Qnil;
+static VALUE cZfsResilveringError = Qnil;
+static VALUE cZfsBadVersionError = Qnil;
+static VALUE cZfsPoolUnavailableError = Qnil;
+static VALUE cZfsDeviceOverflowError = Qnil;
+static VALUE cZfsBadPathError = Qnil;
+static VALUE cZfsCrossTargetError = Qnil;
+static VALUE cZfsZonedError = Qnil;
+static VALUE cZfsMountFailedError = Qnil;
+static VALUE cZfsUnmountFailedError = Qnil;
+static VALUE cZfsUnshareNfsFailedError = Qnil;
+static VALUE cZfsShareNfsFailedError = Qnil;
+static VALUE cZfsUnshareSmbFailedError = Qnil;
+static VALUE cZfsShareSmbFailedError = Qnil;
+static VALUE cZfsPermError = Qnil;
+static VALUE cZfsNospcError = Qnil;
+static VALUE cZfsFaultError = Qnil;
+static VALUE cZfsIOError = Qnil;
+static VALUE cZfsINTRError = Qnil;
+static VALUE cZfsIsSpareError = Qnil;
+static VALUE cZfsInvalidConfigError = Qnil;
+static VALUE cZfsRecursiveError = Qnil;
+static VALUE cZfsNoHistoryError = Qnil;
+static VALUE cZfsPoolPropsError = Qnil;
+static VALUE cZfsPoolNotSupportedError = Qnil;
+static VALUE cZfsPoolInvalidArgError = Qnil;
+static VALUE cZfsNameTooLongError = Qnil;
+static VALUE cZfsOpenFailedError = Qnil;
+static VALUE cZfsNoCapError = Qnil;
+static VALUE cZfsLabelFailedError = Qnil;
+static VALUE cZfsBadWhoError = Qnil;
+static VALUE cZfsBadPermError = Qnil;
+static VALUE cZfsBadPermSetError = Qnil;
+static VALUE cZfsNoDelegationError = Qnil;
+static VALUE cZfsPermReadOnlyError = Qnil;
+static VALUE cZfsBadCacheError = Qnil;
+static VALUE cZfsIsL2CacheError = Qnil;
+static VALUE cZfsVdevNotSupportedError = Qnil;
+static VALUE cZfsNotSupportedError = Qnil;
+static VALUE cZfsActiveSpareError = Qnil;
+static VALUE cZfsUnplayedLogsError = Qnil;
+static VALUE cZfsReftagReleError = Qnil;
+static VALUE cZfsReftagHoldError = Qnil;
+static VALUE cZfsTagTooLongError = Qnil;
+static VALUE cZfsPipeFailedError = Qnil;
+static VALUE cZfsThreadCreateFailedError = Qnil;
+static VALUE cZfsPostSplitOnlineError = Qnil;
+// iSCSI:
+static VALUE cZfsUnshareISCSIFailedError = Qnil;
+static VALUE cZfsShareISCSIFailedError = Qnil;
+
+/*
+ * Select the appropriate Ruby Error class based on libzfs_errno
+ */
+static VALUE zetta_lib_select_error(int zetta_zfserrno)
+{
+  VALUE error = Qnil;
+
+  switch (zetta_zfserrno) {
+    case EZFS_NOMEM: error = cZfsNoMemoryError; break;
+    case EZFS_BADPROP: error = cZfsInvalidPropertyError; break;
+    case EZFS_PROPREADONLY: error = cZfsReadOnlyPropertyError; break;
+    case EZFS_PROPTYPE: error = cZfsInvalidPropertyTypeError; break;
+    case EZFS_PROPNONINHERIT: error = cZfsNonInheritablePropertyError; break;
+    case EZFS_PROPSPACE: error = cZfsPropertySpaceError; break;
+    case EZFS_BADTYPE: error = cZfsInvalidDatasetTypeError; break;
+    case EZFS_BUSY: error = cZfsDatasetBusyError; break;
+    case EZFS_EXISTS: error = cZfsDatasetExistsError; break;
+    case EZFS_NOENT: error = cZfsNoentError; break;
+    case EZFS_BADSTREAM: error = cZfsBadStreamError; break;
+    case EZFS_DSREADONLY: error = cZfsDatasetReadOnlyError; break;
+    case EZFS_VOLTOOBIG: error = cZfsVolumeTooBigError; break;
+    case EZFS_INVALIDNAME: error = cZfsInvalidNameError; break;
+    case EZFS_BADRESTORE: error = cZfsBadRestoreError; break;
+    case EZFS_BADBACKUP: error = cZfsBadBackupError; break;
+    case EZFS_BADTARGET: error = cZfsBadTargetError; break;
+    case EZFS_NODEVICE: error = cZfsNoDeviceError; break;
+    case EZFS_BADDEV: error = cZfsBadDeviceError; break;
+    case EZFS_NOREPLICAS: error = cZfsNoReplicasError; break;
+    case EZFS_RESILVERING: error = cZfsResilveringError; break;
+    case EZFS_BADVERSION: error = cZfsBadVersionError; break;
+    case EZFS_POOLUNAVAIL: error = cZfsPoolUnavailableError; break;
+    case EZFS_DEVOVERFLOW: error = cZfsDeviceOverflowError; break;
+    case EZFS_BADPATH: error = cZfsBadPathError; break;
+    case EZFS_CROSSTARGET: error = cZfsCrossTargetError; break;
+    case EZFS_ZONED: error = cZfsZonedError; break;
+    case EZFS_MOUNTFAILED: error = cZfsMountFailedError; break;
+    case EZFS_UMOUNTFAILED: error = cZfsUnmountFailedError; break;
+    case EZFS_UNSHARENFSFAILED: error = cZfsUnshareNfsFailedError; break;
+    case EZFS_SHARENFSFAILED: error = cZfsShareNfsFailedError; break;
+    case EZFS_UNSHARESMBFAILED: error = cZfsUnshareSmbFailedError; break;
+    case EZFS_SHARESMBFAILED: error = cZfsShareSmbFailedError; break;
+    case EZFS_PERM: error = cZfsPermError; break;
+    case EZFS_NOSPC: error = cZfsNospcError; break;
+    case EZFS_IO: error = cZfsIOError; break;
+    case EZFS_INTR: error = cZfsINTRError; break;
+    case EZFS_ISSPARE: error = cZfsIsSpareError; break;
+    case EZFS_INVALCONFIG: error = cZfsInvalidConfigError; break;
+    case EZFS_RECURSIVE: error = cZfsRecursiveError; break;
+    case EZFS_NOHISTORY: error = cZfsNoHistoryError; break;
+    case EZFS_POOLPROPS: error = cZfsPoolPropsError; break;
+    case EZFS_POOL_NOTSUP: error = cZfsPoolNotSupportedError; break;
+    case EZFS_POOL_INVALARG: error = cZfsPoolInvalidArgError; break;
+    case EZFS_NAMETOOLONG: error = cZfsNameTooLongError; break;
+    case EZFS_OPENFAILED: error = cZfsOpenFailedError; break;
+    case EZFS_NOCAP: error = cZfsNoCapError; break;
+    case EZFS_LABELFAILED: error = cZfsLabelFailedError; break;
+    case EZFS_BADWHO: error = cZfsBadWhoError; break;
+    case EZFS_BADPERM: error = cZfsBadPermError; break;
+    case EZFS_BADPERMSET: error = cZfsBadPermSetError; break;
+    case EZFS_NODELEGATION: error = cZfsNoDelegationError; break;
+    case EZFS_PERMRDONLY: error = cZfsPermReadOnlyError; break;
+    case EZFS_BADCACHE: error = cZfsBadCacheError; break;
+    case EZFS_ISL2CACHE: error = cZfsIsL2CacheError; break;
+    case EZFS_VDEVNOTSUP: error = cZfsVdevNotSupportedError; break;
+
+// Trying to keep it compatible with snv_89:
+#ifdef SPA_VERSION_11
+    case EZFS_NOTSUP: error = cZfsNotSupportedError; break;
+#endif
+
+#ifdef SPA_VERSION_12
+    case EZFS_ACTIVE_SPARE: error = cZfsActiveSpareError; break;
+#endif
+// Open Solaris 2009.06 - Will set the supported systems here? (snv_111b)
+#ifdef SPA_VERSION_16
+    case EZFS_UNPLAYED_LOGS: error = cZfsUnplayedLogsError; break;
+#endif
+
+#ifdef SPA_VERSION_18
+    case EZFS_TAGTOOLONG: error = cZfsTagTooLongError; break;
+    case EZFS_REFTAG_RELE: error = cZfsReftagReleError; break;
+    case EZFS_REFTAG_HOLD: error = cZfsReftagHoldError; break;
+#endif
+
+#ifdef SPA_VERSION_22
+    case EZFS_PIPEFAILED: error = cZfsPipeFailedError; break;
+    case EZFS_THREADCREATEFAILED: error = cZfsThreadCreateFailedError; break;
+#endif
+
+#ifdef SPA_VERSION_23
+    case EZFS_POSTSPLIT_ONLINE: error = cZfsPostSplitOnlineError; break;
+#endif
+
+#ifndef SPA_VERSION_24
+    case EZFS_UNSHAREISCSIFAILED: error = cZfsUnshareISCSIFailedError; break;
+    case EZFS_SHAREISCSIFAILED: error = cZfsShareISCSIFailedError; break;
+#else
+    case EZFS_FAULT: error = cZfsFaultError; break;
+#endif
+
+    default: error = cZfsError;
+  }
+  return error;
+}
+
+
+/*
+ * Raise the proper Ruby error bassed into libzfs error.
+ * (Extracted from zetta_lib_raise_error so we can raise ruby exceptions
+ * directly from C functions).
+ */
+static VALUE zetta_lib_error_exception(libzfs_handle_t *handle)
+{
+  rb_raise(
+    zetta_lib_select_error(libzfs_errno(handle)),
+    "%s: %s", libzfs_error_action(handle), libzfs_error_description(handle));
+}
+
 // Internal method: used to make libzfs_handle argument optional.
 static VALUE zetta_lib_get_handle()
 {
@@ -52,6 +242,8 @@ static VALUE zetta_lib_get_handle()
  * not a <code>String</code> or <code>Symbol</code>.
  * Raise <code>TypeError</code> when <code>@zlib</code> handle is given and it
  * is not an instance of <code>LibZfs</code>.
+ * Raise <code>ZfsError::NoentError</code> when the ZFS storage pool does not
+ * exist.
  *
  */
 static VALUE zetta_pool_new(int argc, VALUE *argv, VALUE klass)
@@ -83,10 +275,13 @@ static VALUE zetta_pool_new(int argc, VALUE *argv, VALUE klass)
 
   Data_Get_Struct(libzfs_handle, libzfs_handle_t, libhandle);
 
-  // FIXME: Should be +_canfail+ or not?
   zpool_handle = zpool_open_canfail(libhandle, StringValuePtr(pool_name));
 
-  return Data_Wrap_Struct(klass, 0, zpool_close, zpool_handle);
+  if(zpool_handle != NULL) {
+    return Data_Wrap_Struct(klass, 0, zpool_close, zpool_handle);
+  }
+  // Raise exception when cannot get a proper Zpool handle:
+  zetta_lib_error_exception(libhandle);
 }
 
 /*
@@ -252,23 +447,93 @@ static VALUE zetta_pool_get_space_total(VALUE self)
  *
  * Return current <code>Zpool</code> instance state as an integer.
  *
- * Can be converted into one of the constants defined at module
+ * The value is one of the constants defined at module
  * <code>ZfsConsts::State::Pool</code>.
- *
- * <b>TODO</b>:
- *
- * - We don't need constants defined this way, can use strings to
- *   get an human friendly description of zpool state. Also, should
- *   define our own set of constants, and do not depend on the values
- *   defined at the libzfs library.
  *
  */
 static VALUE zetta_pool_get_state(VALUE self)
 {
+  VALUE state = Qnil;
+
+  VALUE cZfsConsts = rb_const_get(rb_cObject, rb_intern("ZfsConsts"));
+  VALUE mState = rb_const_get(cZfsConsts, rb_intern("State"));
+  VALUE mPoolState = rb_const_get(mState, rb_intern("Pool"));
   zpool_handle_t *zpool_handle;
   Data_Get_Struct(self, zpool_handle_t, zpool_handle);
 
-  return INT2NUM(zpool_get_state(zpool_handle));
+  switch (zpool_get_state(zpool_handle)) {
+    case POOL_STATE_ACTIVE: state = rb_const_get(mPoolState, rb_intern("ACTIVE")); break;
+    case POOL_STATE_EXPORTED: state = rb_const_get(mPoolState, rb_intern("EXPORTED")); break;
+    case POOL_STATE_DESTROYED: state = rb_const_get(mPoolState, rb_intern("DESTROYED")); break;
+    case POOL_STATE_SPARE: state = rb_const_get(mPoolState, rb_intern("SPARE")); break;
+#ifdef SPA_VERSION_10
+    case POOL_STATE_L2CACHE: state = rb_const_get(mPoolState, rb_intern("L2CACHE")); break;
+#endif
+    case POOL_STATE_UNINITIALIZED: state = rb_const_get(mPoolState, rb_intern("UNINITIALIZED")); break;
+    case POOL_STATE_UNAVAIL: state = rb_const_get(mPoolState, rb_intern("UNAVAIL")); break;
+    case POOL_STATE_POTENTIALLY_ACTIVE: state = rb_const_get(mPoolState, rb_intern("POTENTIALLY_ACTIVE")); break;
+    default: state = rb_const_get(mPoolState, rb_intern("UNKNOWN"));
+  }
+
+  return state;
+}
+
+/*
+ * call-seq:
+ *   @zpool.health_status  => integer, zpool health status.
+ *
+ * Return current <code>Zpool</code> instance health status as an integer.
+ *
+ * The value is one of the constants defined at module
+ * <code>ZfsConsts::HealthStatus::Pool</code>.
+ *
+ */
+static VALUE zetta_pool_get_health_status(VALUE self)
+{
+  VALUE status = Qnil;
+  VALUE cZfsConsts = rb_const_get(rb_cObject, rb_intern("ZfsConsts"));
+  VALUE mHealthStatus = rb_const_get(cZfsConsts, rb_intern("HealthStatus"));
+
+  char *msgid;
+  zpool_handle_t *zpool_handle;
+  Data_Get_Struct(self, zpool_handle_t, zpool_handle);
+
+  switch (zpool_get_status(zpool_handle, &msgid)) {
+    case ZPOOL_STATUS_CORRUPT_CACHE: status = rb_const_get(mHealthStatus, rb_intern("CORRUPT_CACHE"));
+    case ZPOOL_STATUS_MISSING_DEV_R: status = rb_const_get(mHealthStatus, rb_intern("MISSING_DEV_R"));
+    case ZPOOL_STATUS_MISSING_DEV_NR: status = rb_const_get(mHealthStatus, rb_intern("MISSING_DEV_NR"));
+    case ZPOOL_STATUS_CORRUPT_LABEL_R: status = rb_const_get(mHealthStatus, rb_intern("CORRUPT_LABEL_R"));
+    case ZPOOL_STATUS_CORRUPT_LABEL_NR: status = rb_const_get(mHealthStatus, rb_intern("CORRUPT_LABEL_NR"));
+    case ZPOOL_STATUS_BAD_GUID_SUM: status = rb_const_get(mHealthStatus, rb_intern("BAD_GUID_SUM"));
+    case ZPOOL_STATUS_CORRUPT_POOL: status = rb_const_get(mHealthStatus, rb_intern("CORRUPT_POOL"));
+    case ZPOOL_STATUS_CORRUPT_DATA: status = rb_const_get(mHealthStatus, rb_intern("CORRUPT_DATA"));
+    case ZPOOL_STATUS_FAILING_DEV: status = rb_const_get(mHealthStatus, rb_intern("FAILING_DEV"));
+    case ZPOOL_STATUS_VERSION_NEWER: status = rb_const_get(mHealthStatus, rb_intern("VERSION_NEWER"));
+    case ZPOOL_STATUS_HOSTID_MISMATCH: status = rb_const_get(mHealthStatus, rb_intern("HOSTID_MISMATCH"));
+#ifdef SPA_VERSION_11
+    case ZPOOL_STATUS_IO_FAILURE_WAIT: status = rb_const_get(mHealthStatus, rb_intern("IO_FAILURE_WAIT"));
+    case ZPOOL_STATUS_IO_FAILURE_CONTINUE: status = rb_const_get(mHealthStatus, rb_intern("IO_FAILURE_CONTINUE"));
+#endif
+
+#ifdef SPA_VERSION_14
+    case ZPOOL_STATUS_BAD_LOG: status = rb_const_get(mHealthStatus, rb_intern("BAD_LOG"));
+#endif
+
+  // Older than SPA_VERSION, safe:
+    case ZPOOL_STATUS_FAULTED_DEV_R: status = rb_const_get(mHealthStatus, rb_intern("FAULTED_DEV_R"));
+    case ZPOOL_STATUS_FAULTED_DEV_NR: status = rb_const_get(mHealthStatus, rb_intern("FAULTED_DEV_NR"));
+    case ZPOOL_STATUS_VERSION_OLDER: status = rb_const_get(mHealthStatus, rb_intern("VERSION_OLDER"));
+    case ZPOOL_STATUS_RESILVERING: status = rb_const_get(mHealthStatus, rb_intern("RESILVERING"));
+    case ZPOOL_STATUS_OFFLINE_DEV: status = rb_const_get(mHealthStatus, rb_intern("OFFLINE_DEV"));
+
+#ifdef SPA_VERSION_18
+    case ZPOOL_STATUS_REMOVED_DEV: status = rb_const_get(mHealthStatus, rb_intern("REMOVED_DEV"));
+#endif
+
+    case ZPOOL_STATUS_OK: status = rb_const_get(mHealthStatus, rb_intern("OK"));
+    default: state = rb_const_get(mHealthStatus, rb_intern("UNKNOWN"));
+  }
+  return status;
 }
 
 /*
@@ -457,7 +722,11 @@ static VALUE zetta_fs_new(int argc, VALUE *argv, VALUE klass)
   zfs_handle = zfs_open(libhandle, StringValuePtr(fs_name), NUM2INT(types));
   // Prevent Segementation Faults when the given Dataset does not exist and
   // somebody tries to access to a given property:
-  return (zfs_handle == NULL) ? Qnil: Data_Wrap_Struct(klass, 0, zfs_close, zfs_handle);
+  if(zfs_handle != NULL) {
+    return Data_Wrap_Struct(klass, 0, zfs_close, zfs_handle);
+  }
+  // Raise exception when cannot get a proper ZFS handle:
+  zetta_lib_error_exception(libhandle);
 }
 
 /*
@@ -662,7 +931,8 @@ static VALUE zetta_fs_rename(VALUE self, VALUE target, VALUE recursive)
  * Given a <code>dataset_name</code>, and a <code>dataset_type</code>,
  * create a zfs dataset.
  *
- * Return a new Zfs instance for the given dataset on success or false on failure.
+ * Return a new Zfs instance for the given dataset on success or raise
+ * exception on failure failure.
  *
  * Raise <code>ArgumentError</code> when <code>dataset_name</code> and
  * <code>dataset_type</code> are not given.
@@ -705,9 +975,9 @@ static VALUE zetta_fs_create(int argc, VALUE *argv, VALUE klass)
     zfs_handle_t  *zfs_handle;
     zfs_handle = zfs_open(libhandle, StringValuePtr(fs_name), NUM2INT(types));
     return Data_Wrap_Struct(klass, 0, zfs_close, zfs_handle);
-  } else {
-    return Qfalse;
   }
+  // Raise exception when cannot get a proper ZFS handle:
+  zetta_lib_error_exception(libhandle);
 }
 
 /*
@@ -770,7 +1040,7 @@ static VALUE zetta_fs_dataset_exists(int argc, VALUE *argv, VALUE klass)
  * Check if a dataset with the given <code>dataset_name</code>, of the given
  * <code>dataset_type</code> exists.
  *
- * Return a ZFS snapshot instance on success or nil on failure.
+ * Return a ZFS snapshot instance on success or raise error on failure.
  *
  * Raise <code>ArgumentError</code> when <code>snapshot_name</code> is not
  * given.
@@ -807,9 +1077,8 @@ static VALUE zetta_fs_snapshot(int argc, VALUE *argv, VALUE klass)
     zfs_handle_t  *zfs_handle;
     zfs_handle = zfs_open(libhandle, StringValuePtr(snapshot_name), ZFS_TYPE_SNAPSHOT);
     return Data_Wrap_Struct(klass, 0, zfs_close, zfs_handle);
-  } else {
-    return Qnil;
   }
+  zetta_lib_error_exception(libhandle);
 }
 
 /*
@@ -854,10 +1123,10 @@ static VALUE zetta_fs_rollback(VALUE self, VALUE snapshot, VALUE force)
 
 /*
  * call-seq:
- *   @zfs.clone!('clone_name')  => ZFS instance | nil
+ *   @zfs.clone!('clone_name')  => ZFS instance
  *
  * Create a clone with the given <code>clone_name</code> for the current
- * ZFS Snapshot instance.
+ * ZFS Snapshot instance. Raise <code>ZfsError</code> on failure.
  *
  *
  * Raise <code>TypeError</code> when <code>clone_name</code>
@@ -865,9 +1134,6 @@ static VALUE zetta_fs_rollback(VALUE self, VALUE snapshot, VALUE force)
  * Raise <code>NoMethodError</code> when the current <code>ZfsLib</code>
  * instance is not a Snapshot.
  *
- * TODO:
- *
- * - Actually, return nil on failure, will raise error.
  *
  * NOTE: This method cannot be <i>clone</i> due to obvious Ruby reasons.
  *
@@ -886,15 +1152,15 @@ static VALUE zetta_fs_clone(VALUE self, VALUE clone_name)
     rb_raise(rb_eNoMethodError, "Clone operation is only available for Datasets of type snapshot.");
   }
 
+  libzfs_handle_t *libhandle = zfs_get_handle(zfs_handle);
+
   if (0 == zfs_clone(zfs_handle, StringValuePtr(clone_name), NULL)){
-    libzfs_handle_t *libhandle= zfs_get_handle(zfs_handle);
     zfs_handle_t  *zfs_clone_handle;
 
     zfs_clone_handle = zfs_open(libhandle, StringValuePtr(clone_name), ZFS_TYPE_FILESYSTEM);
     return Data_Wrap_Struct(CLASS_OF(self), 0, zfs_close, zfs_clone_handle);
-  } else {
-    return Qnil;
   }
+  zetta_lib_error_exception(libhandle);
 }
 
 /*
@@ -1052,16 +1318,9 @@ static VALUE zetta_fs_is_mounted(VALUE self)
 
 /*
  * call-seq:
- *   @zfs.mount  => Integer, 0|-1
+ *   @zfs.mount  => Boolean
  *
  * Mount the current dataset instance.
- *
- * TODO:
- *
- * - Actually, return -1 on failure, 0 on succes, should return false/true.
- * - Right now, the reason for the failure is on @libzfs.errno, with the
- *   associated messages. Maybe it would have sense to raise a proper ruby
- *   error for failures.
  *
  */
 static VALUE zetta_fs_mount(VALUE self)
@@ -1069,21 +1328,14 @@ static VALUE zetta_fs_mount(VALUE self)
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
 
-  return INT2NUM(zfs_mount(zfs_handle, NULL, 0));
+  return (zfs_mount(zfs_handle, NULL, 0) == 0) ? Qtrue : Qfalse;
 }
 
 /*
  * call-seq:
- *   @zfs.unmount  => Integer, 0|-1
+ *   @zfs.unmount  => Boolean
  *
  * Unmount the current dataset instance.
- *
- * TODO:
- *
- * - Actually, return -1 on failure, 0 on succes, should return false/true.
- * - Right now, the reason for the failure is on @libzfs.errno, with the
- *   associated messages. Maybe it would have sense to raise a proper ruby
- *   error for failures.
  *
  */
 static VALUE zetta_fs_unmount(VALUE self)
@@ -1091,23 +1343,14 @@ static VALUE zetta_fs_unmount(VALUE self)
   zfs_handle_t *zfs_handle;
   Data_Get_Struct(self, zfs_handle_t, zfs_handle);
 
-  return INT2NUM(zfs_unmount(zfs_handle, NULL, 0));
+  return (zfs_unmount(zfs_handle, NULL, 0) == 0) ? Qtrue : Qfalse;
 }
 
 /*
  * call-seq:
- *   @zfs.destroy!  => Integer, 0|-1
+ *   @zfs.destroy!  => Boolean
  *
- * Destroys the current dataset instance.
- *
- * TODO:
- *
- * - Shouldn't this be a class method?. Leaving the destroyed ZFS Dataset
- *   instance around might cause problems when trying to access some methods.
- * - Actually, return -1 on failure, 0 on succes, should return false/true.
- * - Right now, the reason for the failure is on @libzfs.errno, with the
- *   associated messages. Maybe it would have sense to raise a proper ruby
- *   error for failures.
+ * Destroy the current dataset instance.
  *
  */
 static VALUE zetta_fs_destroy(VALUE self)
@@ -1117,9 +1360,9 @@ static VALUE zetta_fs_destroy(VALUE self)
 
 // Boolean parameter was added to zfs_destroy:
 #ifdef SPA_VERSION_18
-  return INT2NUM(zfs_destroy(zfs_handle,B_FALSE));
+  return (zfs_destroy(zfs_handle,B_FALSE) == 0) ? Qtrue : Qfalse;
 #else
-  return INT2NUM(zfs_destroy(zfs_handle));
+  return (zfs_destroy(zfs_handle) == 0) ? Qtrue : Qfalse;
 #endif
 }
 
@@ -1289,6 +1532,13 @@ static VALUE zetta_lib_errno(VALUE self)
   return INT2NUM(libzfs_errno(handle));
 }
 
+/*
+ * call-seq:
+ *   libzfs_handle.print_on_error(true|false)  => Nil
+ *
+ * When set to true, libzfs will print zfs errors to $stderr.
+ *
+ */
 static VALUE zetta_lib_print_on_error(VALUE self, VALUE b)
 {
   libzfs_handle_t *handle;
@@ -1333,6 +1583,25 @@ static VALUE zetta_lib_error_description(VALUE self)
 
 /*
  * call-seq:
+ *   libzfs_handle.raise_error  => Exception, ZfsError::Error instance
+ *
+ * Raises the libzfs associated error as a proper ruby Error instance.
+ * See <code>ZfsError::Error</code> and subclasses for the defined error
+ *  classes.
+ *
+ */
+static VALUE zetta_lib_raise_error(VALUE self)
+{
+  VALUE error = Qnil;
+
+  libzfs_handle_t *handle;
+  Data_Get_Struct(self, libzfs_handle_t, handle);
+
+  return zetta_lib_error_exception(handle);
+}
+
+/*
+ * call-seq:
  *   LibZfs#handle => object, libzfs_handle, instance of LibZfs
  *
  * Return <code>libzfs_handle</code> object, which can be used by some other
@@ -1358,7 +1627,6 @@ static VALUE zetta_lib_handle(VALUE klass)
 static void Init_libzfs_consts()
 {
   VALUE cZfsConsts = rb_define_module("ZfsConsts");
-  VALUE mErrors = rb_define_module_under(cZfsConsts, "Errors");
   VALUE mTypes = rb_define_module_under(cZfsConsts, "Types");
   VALUE mHealthStatus = rb_define_module_under(cZfsConsts, "HealthStatus");
   VALUE mState = rb_define_module_under(cZfsConsts, "State");
@@ -1386,154 +1654,117 @@ static void Init_libzfs_consts()
   rb_define_const(mTypes, "ANY", INT2NUM(ZFS_TYPE_ANY));
 #endif
 
-  // Error codes
-  rb_define_const(mErrors, "NOMEM", INT2NUM(EZFS_NOMEM));
-  rb_define_const(mErrors, "BADPROP", INT2NUM(EZFS_BADPROP));
-  rb_define_const(mErrors, "PROPREADONLY", INT2NUM(EZFS_PROPREADONLY));
-  rb_define_const(mErrors, "PROPTYPE", INT2NUM(EZFS_PROPTYPE));
-  rb_define_const(mErrors, "PROPNONINHERIT", INT2NUM(EZFS_PROPNONINHERIT));
-  rb_define_const(mErrors, "PROPSPACE", INT2NUM(EZFS_PROPSPACE));
-  rb_define_const(mErrors, "BADTYPE", INT2NUM(EZFS_BADTYPE));
-  rb_define_const(mErrors, "BUSY", INT2NUM(EZFS_BUSY));
-  rb_define_const(mErrors, "EXISTS", INT2NUM(EZFS_EXISTS));
-  rb_define_const(mErrors, "NOENT", INT2NUM(EZFS_NOENT));
-  rb_define_const(mErrors, "BADSTREAM", INT2NUM(EZFS_BADSTREAM));
-  rb_define_const(mErrors, "DSREADONLY", INT2NUM(EZFS_DSREADONLY));
-  rb_define_const(mErrors, "VOLTOOBIG", INT2NUM(EZFS_VOLTOOBIG));
-  rb_define_const(mErrors, "VOLHASDATA", INT2NUM(EZFS_VOLHASDATA));
-  rb_define_const(mErrors, "INVALIDNAME", INT2NUM(EZFS_INVALIDNAME));
-  rb_define_const(mErrors, "BADRESTORE", INT2NUM(EZFS_BADRESTORE));
-  rb_define_const(mErrors, "BADBACKUP", INT2NUM(EZFS_BADBACKUP));
-  rb_define_const(mErrors, "BADTARGET", INT2NUM(EZFS_BADTARGET));
-  rb_define_const(mErrors, "NODEVICE", INT2NUM(EZFS_NODEVICE));
-  rb_define_const(mErrors, "BADDEV", INT2NUM(EZFS_BADDEV));
-  rb_define_const(mErrors, "NOREPLICAS", INT2NUM(EZFS_NOREPLICAS));
-  rb_define_const(mErrors, "RESILVERING", INT2NUM(EZFS_RESILVERING));
-  rb_define_const(mErrors, "BADVERSION", INT2NUM(EZFS_BADVERSION));
-  rb_define_const(mErrors, "POOLUNAVAIL", INT2NUM(EZFS_POOLUNAVAIL));
-  rb_define_const(mErrors, "DEVOVERFLOW", INT2NUM(EZFS_DEVOVERFLOW));
-  rb_define_const(mErrors, "BADPATH", INT2NUM(EZFS_BADPATH));
-  rb_define_const(mErrors, "CROSSTARGET", INT2NUM(EZFS_CROSSTARGET));
-  rb_define_const(mErrors, "ZONED", INT2NUM(EZFS_ZONED));
-  rb_define_const(mErrors, "MOUNTFAILED", INT2NUM(EZFS_MOUNTFAILED));
-  rb_define_const(mErrors, "UMOUNTFAILED", INT2NUM(EZFS_UMOUNTFAILED));
-  rb_define_const(mErrors, "UNSHARENFSFAILED", INT2NUM(EZFS_UNSHARENFSFAILED));
-  rb_define_const(mErrors, "SHARENFSFAILED", INT2NUM(EZFS_SHARENFSFAILED));
-  rb_define_const(mErrors, "DEVLINKS", INT2NUM(EZFS_DEVLINKS));
-  rb_define_const(mErrors, "PERM", INT2NUM(EZFS_PERM));
-  rb_define_const(mErrors, "NOSPC", INT2NUM(EZFS_NOSPC));
-  rb_define_const(mErrors, "IO", INT2NUM(EZFS_IO));
-  rb_define_const(mErrors, "INTR", INT2NUM(EZFS_INTR));
-  rb_define_const(mErrors, "ISSPARE", INT2NUM(EZFS_ISSPARE));
-  rb_define_const(mErrors, "INVALCONFIG", INT2NUM(EZFS_INVALCONFIG));
-  rb_define_const(mErrors, "RECURSIVE", INT2NUM(EZFS_RECURSIVE));
-  rb_define_const(mErrors, "NOHISTORY", INT2NUM(EZFS_NOHISTORY));
-  rb_define_const(mErrors, "UNSHAREISCSIFAILED", INT2NUM(EZFS_UNSHAREISCSIFAILED));
-  rb_define_const(mErrors, "SHAREISCSIFAILED", INT2NUM(EZFS_SHAREISCSIFAILED));
-  rb_define_const(mErrors, "POOLPROPS", INT2NUM(EZFS_POOLPROPS));
-  rb_define_const(mErrors, "POOL_NOTSUP", INT2NUM(EZFS_POOL_NOTSUP));
-  rb_define_const(mErrors, "POOL_INVALARG", INT2NUM(EZFS_POOL_INVALARG));
-  rb_define_const(mErrors, "NAMETOOLONG", INT2NUM(EZFS_NAMETOOLONG));
-  rb_define_const(mErrors, "UNKNOWN", INT2NUM(EZFS_UNKNOWN));
-
   /* Pool health status codes. */
-  rb_define_const(mHealthStatus, "CORRUPT_CACHE", INT2NUM(ZPOOL_STATUS_CORRUPT_CACHE));
-  rb_define_const(mHealthStatus, "MISSING_DEV_R", INT2NUM(ZPOOL_STATUS_MISSING_DEV_R));
-  rb_define_const(mHealthStatus, "MISSING_DEV_NR", INT2NUM(ZPOOL_STATUS_MISSING_DEV_NR));
-  rb_define_const(mHealthStatus, "CORRUPT_LABEL_R", INT2NUM(ZPOOL_STATUS_CORRUPT_LABEL_R));
-  rb_define_const(mHealthStatus, "CORRUPT_LABEL_NR", INT2NUM(ZPOOL_STATUS_CORRUPT_LABEL_NR));
-  rb_define_const(mHealthStatus, "BAD_GUID_SUM", INT2NUM(ZPOOL_STATUS_BAD_GUID_SUM));
-  rb_define_const(mHealthStatus, "CORRUPT_POOL", INT2NUM(ZPOOL_STATUS_CORRUPT_POOL));
-  rb_define_const(mHealthStatus, "CORRUPT_DATA", INT2NUM(ZPOOL_STATUS_CORRUPT_DATA));
-  rb_define_const(mHealthStatus, "FAILING_DEV", INT2NUM(ZPOOL_STATUS_FAILING_DEV));
-  rb_define_const(mHealthStatus, "VERSION_NEWER", INT2NUM(ZPOOL_STATUS_VERSION_NEWER));
-  rb_define_const(mHealthStatus, "HOSTID_MISMATCH", INT2NUM(ZPOOL_STATUS_HOSTID_MISMATCH));
-  rb_define_const(mHealthStatus, "VERSION_OLDER", INT2NUM(ZPOOL_STATUS_VERSION_OLDER));
-  rb_define_const(mHealthStatus, "RESILVERING", INT2NUM(ZPOOL_STATUS_RESILVERING));
-  rb_define_const(mHealthStatus, "OFFLINE_DEV", INT2NUM(ZPOOL_STATUS_OFFLINE_DEV));
-  rb_define_const(mHealthStatus, "OK", INT2NUM(ZPOOL_STATUS_OK));
+  rb_define_const(mHealthStatus, "CORRUPT_CACHE", INT2NUM(0));
+  rb_define_const(mHealthStatus, "MISSING_DEV_R", INT2NUM(1));
+  rb_define_const(mHealthStatus, "MISSING_DEV_NR", INT2NUM(2));
+  rb_define_const(mHealthStatus, "CORRUPT_LABEL_R", INT2NUM(3));
+  rb_define_const(mHealthStatus, "CORRUPT_LABEL_NR", INT2NUM(4));
+  rb_define_const(mHealthStatus, "BAD_GUID_SUM", INT2NUM(5));
+  rb_define_const(mHealthStatus, "CORRUPT_POOL", INT2NUM(6));
+  rb_define_const(mHealthStatus, "CORRUPT_DATA", INT2NUM(7));
+  rb_define_const(mHealthStatus, "FAILING_DEV", INT2NUM(8));
+  rb_define_const(mHealthStatus, "VERSION_NEWER", INT2NUM(9));
+  rb_define_const(mHealthStatus, "HOSTID_MISMATCH", INT2NUM(10));
+  rb_define_const(mHealthStatus, "IO_FAILURE_WAIT", INT2NUM(11));
+  rb_define_const(mHealthStatus, "IO_FAILURE_CONTINUE", INT2NUM(12));
+  rb_define_const(mHealthStatus, "BAD_LOG", INT2NUM(13));
+  rb_define_const(mHealthStatus, "FAULTED_DEV_R", INT2NUM(14));
+  rb_define_const(mHealthStatus, "FAULTED_DEV_NR", INT2NUM(15));
+  rb_define_const(mHealthStatus, "VERSION_OLDER", INT2NUM(16));
+  rb_define_const(mHealthStatus, "RESILVERING", INT2NUM(17));
+  rb_define_const(mHealthStatus, "OFFLINE_DEV", INT2NUM(18));
+  rb_define_const(mHealthStatus, "REMOVED_DEV", INT2NUM(19));
+  rb_define_const(mHealthStatus, "OK", INT2NUM(20));
+  rb_define_const(mHealthStatus, "UNKNOWN", INT2NUM(21));
 
   /* Pool state codes */
-  rb_define_const(mPoolState, "ACTIVE", INT2NUM(POOL_STATE_ACTIVE));
-  rb_define_const(mPoolState, "EXPORTED", INT2NUM(POOL_STATE_EXPORTED));
-  rb_define_const(mPoolState, "DESTROYED", INT2NUM(POOL_STATE_DESTROYED));
-  rb_define_const(mPoolState, "SPARE", INT2NUM(POOL_STATE_SPARE));
-  rb_define_const(mPoolState, "UNINITIALIZED", INT2NUM(POOL_STATE_UNINITIALIZED));
-  rb_define_const(mPoolState, "UNAVAIL", INT2NUM(POOL_STATE_UNAVAIL));
-  rb_define_const(mPoolState, "POTENTIALLY_ACTIVE", INT2NUM(POOL_STATE_POTENTIALLY_ACTIVE));
+  rb_define_const(mPoolState, "ACTIVE", INT2NUM(0));
+  rb_define_const(mPoolState, "EXPORTED", INT2NUM(1));
+  rb_define_const(mPoolState, "DESTROYED", INT2NUM(2));
+  rb_define_const(mPoolState, "SPARE", INT2NUM(3));
+  rb_define_const(mPoolState, "UNINITIALIZED", INT2NUM(4));
+  rb_define_const(mPoolState, "UNAVAIL", INT2NUM(5));
+  rb_define_const(mPoolState, "POTENTIALLY_ACTIVE", INT2NUM(6));
+  rb_define_const(mPoolState, "UNKNOWN", INT2NUM(7));
+  rb_define_const(mPoolState, "L2CACHE", INT2NUM(8));
 }
 
 static void Init_libzfs_errors()
 {
   VALUE mZfsError = rb_define_module("ZfsError");
-  VALUE cZfsError = rb_define_class_under(mZfsError, "Error", rb_eStandardError);
+  cZfsError = rb_define_class_under(mZfsError, "Error", rb_eStandardError);
 
-  VALUE cZfsNoMemoryError = rb_define_class_under(mZfsError, "NoMemoryError", cZfsError);
-  VALUE cZfsInvalidPropertyError = rb_define_class_under(mZfsError, "InvalidPropertyError", cZfsError);
-  VALUE cZfsReadOnlyPropertyError = rb_define_class_under(mZfsError, "ReadOnlyPropertyError", cZfsError);
-  VALUE cZfsInvalidPropertyTypeError = rb_define_class_under(mZfsError, "InvalidPropertyTypeError", cZfsError);
-  VALUE cZfsNonInheritablePropertyError = rb_define_class_under(mZfsError, "NonInheritablePropertyError", cZfsError);
-  VALUE cZfsPropertySpaceError = rb_define_class_under(mZfsError, "PropertySpaceError", cZfsError);
-  VALUE cZfsInvalidDatasetTypeError = rb_define_class_under(mZfsError, "InvalidDatasetTypeError", cZfsError);
-  VALUE cZfsDatasetBusyError = rb_define_class_under(mZfsError, "DatasetBusyError", cZfsError);
-  VALUE cZfsDatasetExistsError = rb_define_class_under(mZfsError, "DatasetExistsError", cZfsError);
-  VALUE cZfsNoentError = rb_define_class_under(mZfsError, "NoentError", cZfsError);
-  VALUE cZfsBadStreamError = rb_define_class_under(mZfsError, "BadStreamError", cZfsError);
-  VALUE cZfsDatasetReadOnlyError = rb_define_class_under(mZfsError, "DatasetReadOnlyError", cZfsError);
-  VALUE cZfsVolumeTooBigError = rb_define_class_under(mZfsError, "VolumeTooBigError", cZfsError);
-  VALUE cZfsInvalidNameError = rb_define_class_under(mZfsError, "InvalidNameError", cZfsError);
-  VALUE cZfsBadRestoreError = rb_define_class_under(mZfsError, "BadRestoreError", cZfsError);
-  VALUE cZfsBadBackupError = rb_define_class_under(mZfsError, "BadBackupError", cZfsError);
-  VALUE cZfsBadTargetError = rb_define_class_under(mZfsError, "BadTargetError", cZfsError);
-  VALUE cZfsNoDeviceError = rb_define_class_under(mZfsError, "NoDeviceError", cZfsError);
-  VALUE cZfsBadDeviceError = rb_define_class_under(mZfsError, "BadDeviceError", cZfsError);
-  VALUE cZfsNoReplicasError = rb_define_class_under(mZfsError, "NoReplicasError", cZfsError);
-  VALUE cZfsResilveringError = rb_define_class_under(mZfsError, "ResilveringError", cZfsError);
-  VALUE cZfsBadVersionError = rb_define_class_under(mZfsError, "BadVersionError", cZfsError);
-  VALUE cZfsPoolUnavailableError = rb_define_class_under(mZfsError, "PoolUnavailableError", cZfsError);
-  VALUE cZfsDeviceOverflowError = rb_define_class_under(mZfsError, "DeviceOverflowError", cZfsError);
-  VALUE cZfsBadPathError = rb_define_class_under(mZfsError, "BadPathError", cZfsError);
-  VALUE cZfsCrossTargetError = rb_define_class_under(mZfsError, "CrossTargetError", cZfsError);
-  VALUE cZfsZonedError = rb_define_class_under(mZfsError, "ZonedError", cZfsError);
-  VALUE cZfsMountFailedError = rb_define_class_under(mZfsError, "MountFailedError", cZfsError);
-  VALUE cZfsUnmountFailedError = rb_define_class_under(mZfsError, "UnmountFailedError", cZfsError);
-  VALUE cZfsUnshareNfsFailedError = rb_define_class_under(mZfsError, "UnshareNfsFailedError", cZfsError);
-  VALUE cZfsShareNfsFailedError = rb_define_class_under(mZfsError, "ShareNfsFailedError", cZfsError);
-  VALUE cZfsUnshareSmbFailedError = rb_define_class_under(mZfsError, "UnshareSmbFailedError", cZfsError);
-  VALUE cZfsShareSmbFailedError = rb_define_class_under(mZfsError, "ShareSmbFailedError", cZfsError);
-  VALUE cZfsPermError = rb_define_class_under(mZfsError, "PermError", cZfsError);
-  VALUE cZfsNospcError = rb_define_class_under(mZfsError, "NospcError", cZfsError);
-  VALUE cZfsFaultError = rb_define_class_under(mZfsError, "FaultError", cZfsError);
-  VALUE cZfsIOError = rb_define_class_under(mZfsError, "IOError", cZfsError);
-  VALUE cZfsINTRError = rb_define_class_under(mZfsError, "INTRError", cZfsError);
-  VALUE cZfsIsSpareError = rb_define_class_under(mZfsError, "IsSpareError", cZfsError);
-  VALUE cZfsInvalidConfigError = rb_define_class_under(mZfsError, "InvalidConfigError", cZfsError);
-  VALUE cZfsRecursiveError = rb_define_class_under(mZfsError, "RecursiveError", cZfsError);
-  VALUE cZfsNoHistoryError = rb_define_class_under(mZfsError, "NoHistoryError", cZfsError);
-  VALUE cZfsPoolPropsError = rb_define_class_under(mZfsError, "PoolPropsError", cZfsError);
-  VALUE cZfsPoolNotSupportedError = rb_define_class_under(mZfsError, "PoolNotSupportedError", cZfsError);
-  VALUE cZfsPoolInvalidArgError = rb_define_class_under(mZfsError, "PoolInvalidArgError", cZfsError);
-  VALUE cZfsNameTooLongError = rb_define_class_under(mZfsError, "NameTooLongError", cZfsError);
-  VALUE cZfsOpenFailedError = rb_define_class_under(mZfsError, "OpenFailedError", cZfsError);
-  VALUE cZfsNoCapError = rb_define_class_under(mZfsError, "NoCapError", cZfsError);
-  VALUE cZfsLabelFailedError = rb_define_class_under(mZfsError, "LabelFailedError", cZfsError);
-  VALUE cZfsBadWhoError = rb_define_class_under(mZfsError, "BadWhoError", cZfsError);
-  VALUE cZfsBadPermError = rb_define_class_under(mZfsError, "BadPermError", cZfsError);
-  VALUE cZfsBadPermSetError = rb_define_class_under(mZfsError, "BadPermSetError", cZfsError);
-  VALUE cZfsNoDelegationError = rb_define_class_under(mZfsError, "NoDelegationError", cZfsError);
-  VALUE cZfsPermReadOnlyError = rb_define_class_under(mZfsError, "PermReadOnlyError", cZfsError);
-  VALUE cZfsBadCacheError = rb_define_class_under(mZfsError, "BadCacheError", cZfsError);
-  VALUE cZfsIsL2CacheError = rb_define_class_under(mZfsError, "IsL2CacheError", cZfsError);
-  VALUE cZfsVdevNotSupportedError = rb_define_class_under(mZfsError, "VdevNotSupportedError", cZfsError);
-  VALUE cZfsNotSupportedError = rb_define_class_under(mZfsError, "NotSupportedError", cZfsError);
-  VALUE cZfsActiveSpareError = rb_define_class_under(mZfsError, "ActiveSpareError", cZfsError);
-  VALUE cZfsUnplayedLogsError = rb_define_class_under(mZfsError, "UnplayedLogsError", cZfsError);
-  VALUE cZfsReftagReleError = rb_define_class_under(mZfsError, "ReftagReleError", cZfsError);
-  VALUE cZfsReftagHoldError = rb_define_class_under(mZfsError, "ReftagHoldError", cZfsError);
-  VALUE cZfsTagTooLongError = rb_define_class_under(mZfsError, "TagTooLongError", cZfsError);
-  VALUE cZfsPipeFailedError = rb_define_class_under(mZfsError, "PipeFailedError", cZfsError);
-  VALUE cZfsThreadCreateFailedError = rb_define_class_under(mZfsError, "ThreadCreateFailedError", cZfsError);
-  VALUE cZfsPostSplitOnlineError = rb_define_class_under(mZfsError, "PostSplitOnlineError", cZfsError);
+  cZfsNoMemoryError = rb_define_class_under(mZfsError, "NoMemoryError", cZfsError);
+  cZfsInvalidPropertyError = rb_define_class_under(mZfsError, "InvalidPropertyError", cZfsError);
+  cZfsReadOnlyPropertyError = rb_define_class_under(mZfsError, "ReadOnlyPropertyError", cZfsError);
+  cZfsInvalidPropertyTypeError = rb_define_class_under(mZfsError, "InvalidPropertyTypeError", cZfsError);
+  cZfsNonInheritablePropertyError = rb_define_class_under(mZfsError, "NonInheritablePropertyError", cZfsError);
+  cZfsPropertySpaceError = rb_define_class_under(mZfsError, "PropertySpaceError", cZfsError);
+  cZfsInvalidDatasetTypeError = rb_define_class_under(mZfsError, "InvalidDatasetTypeError", cZfsError);
+  cZfsDatasetBusyError = rb_define_class_under(mZfsError, "DatasetBusyError", cZfsError);
+  cZfsDatasetExistsError = rb_define_class_under(mZfsError, "DatasetExistsError", cZfsError);
+  cZfsNoentError = rb_define_class_under(mZfsError, "NoentError", cZfsError);
+  cZfsBadStreamError = rb_define_class_under(mZfsError, "BadStreamError", cZfsError);
+  cZfsDatasetReadOnlyError = rb_define_class_under(mZfsError, "DatasetReadOnlyError", cZfsError);
+  cZfsVolumeTooBigError = rb_define_class_under(mZfsError, "VolumeTooBigError", cZfsError);
+  cZfsInvalidNameError = rb_define_class_under(mZfsError, "InvalidNameError", cZfsError);
+  cZfsBadRestoreError = rb_define_class_under(mZfsError, "BadRestoreError", cZfsError);
+  cZfsBadBackupError = rb_define_class_under(mZfsError, "BadBackupError", cZfsError);
+  cZfsBadTargetError = rb_define_class_under(mZfsError, "BadTargetError", cZfsError);
+  cZfsNoDeviceError = rb_define_class_under(mZfsError, "NoDeviceError", cZfsError);
+  cZfsBadDeviceError = rb_define_class_under(mZfsError, "BadDeviceError", cZfsError);
+  cZfsNoReplicasError = rb_define_class_under(mZfsError, "NoReplicasError", cZfsError);
+  cZfsResilveringError = rb_define_class_under(mZfsError, "ResilveringError", cZfsError);
+  cZfsBadVersionError = rb_define_class_under(mZfsError, "BadVersionError", cZfsError);
+  cZfsPoolUnavailableError = rb_define_class_under(mZfsError, "PoolUnavailableError", cZfsError);
+  cZfsDeviceOverflowError = rb_define_class_under(mZfsError, "DeviceOverflowError", cZfsError);
+  cZfsBadPathError = rb_define_class_under(mZfsError, "BadPathError", cZfsError);
+  cZfsCrossTargetError = rb_define_class_under(mZfsError, "CrossTargetError", cZfsError);
+  cZfsZonedError = rb_define_class_under(mZfsError, "ZonedError", cZfsError);
+  cZfsMountFailedError = rb_define_class_under(mZfsError, "MountFailedError", cZfsError);
+  cZfsUnmountFailedError = rb_define_class_under(mZfsError, "UnmountFailedError", cZfsError);
+  cZfsUnshareNfsFailedError = rb_define_class_under(mZfsError, "UnshareNfsFailedError", cZfsError);
+  cZfsShareNfsFailedError = rb_define_class_under(mZfsError, "ShareNfsFailedError", cZfsError);
+  cZfsUnshareSmbFailedError = rb_define_class_under(mZfsError, "UnshareSmbFailedError", cZfsError);
+  cZfsShareSmbFailedError = rb_define_class_under(mZfsError, "ShareSmbFailedError", cZfsError);
+  cZfsPermError = rb_define_class_under(mZfsError, "PermError", cZfsError);
+  cZfsNospcError = rb_define_class_under(mZfsError, "NospcError", cZfsError);
+  cZfsFaultError = rb_define_class_under(mZfsError, "FaultError", cZfsError);
+  cZfsIOError = rb_define_class_under(mZfsError, "IOError", cZfsError);
+  cZfsINTRError = rb_define_class_under(mZfsError, "INTRError", cZfsError);
+  cZfsIsSpareError = rb_define_class_under(mZfsError, "IsSpareError", cZfsError);
+  cZfsInvalidConfigError = rb_define_class_under(mZfsError, "InvalidConfigError", cZfsError);
+  cZfsRecursiveError = rb_define_class_under(mZfsError, "RecursiveError", cZfsError);
+  cZfsNoHistoryError = rb_define_class_under(mZfsError, "NoHistoryError", cZfsError);
+  cZfsPoolPropsError = rb_define_class_under(mZfsError, "PoolPropsError", cZfsError);
+  cZfsPoolNotSupportedError = rb_define_class_under(mZfsError, "PoolNotSupportedError", cZfsError);
+  cZfsPoolInvalidArgError = rb_define_class_under(mZfsError, "PoolInvalidArgError", cZfsError);
+  cZfsNameTooLongError = rb_define_class_under(mZfsError, "NameTooLongError", cZfsError);
+  cZfsOpenFailedError = rb_define_class_under(mZfsError, "OpenFailedError", cZfsError);
+  cZfsNoCapError = rb_define_class_under(mZfsError, "NoCapError", cZfsError);
+  cZfsLabelFailedError = rb_define_class_under(mZfsError, "LabelFailedError", cZfsError);
+  cZfsBadWhoError = rb_define_class_under(mZfsError, "BadWhoError", cZfsError);
+  cZfsBadPermError = rb_define_class_under(mZfsError, "BadPermError", cZfsError);
+  cZfsBadPermSetError = rb_define_class_under(mZfsError, "BadPermSetError", cZfsError);
+  cZfsNoDelegationError = rb_define_class_under(mZfsError, "NoDelegationError", cZfsError);
+  cZfsPermReadOnlyError = rb_define_class_under(mZfsError, "PermReadOnlyError", cZfsError);
+  cZfsBadCacheError = rb_define_class_under(mZfsError, "BadCacheError", cZfsError);
+  cZfsIsL2CacheError = rb_define_class_under(mZfsError, "IsL2CacheError", cZfsError);
+  cZfsVdevNotSupportedError = rb_define_class_under(mZfsError, "VdevNotSupportedError", cZfsError);
+  cZfsNotSupportedError = rb_define_class_under(mZfsError, "NotSupportedError", cZfsError);
+  cZfsActiveSpareError = rb_define_class_under(mZfsError, "ActiveSpareError", cZfsError);
+  cZfsUnplayedLogsError = rb_define_class_under(mZfsError, "UnplayedLogsError", cZfsError);
+  cZfsReftagReleError = rb_define_class_under(mZfsError, "ReftagReleError", cZfsError);
+  cZfsReftagHoldError = rb_define_class_under(mZfsError, "ReftagHoldError", cZfsError);
+  cZfsTagTooLongError = rb_define_class_under(mZfsError, "TagTooLongError", cZfsError);
+  cZfsPipeFailedError = rb_define_class_under(mZfsError, "PipeFailedError", cZfsError);
+  cZfsThreadCreateFailedError = rb_define_class_under(mZfsError, "ThreadCreateFailedError", cZfsError);
+  cZfsPostSplitOnlineError = rb_define_class_under(mZfsError, "PostSplitOnlineError", cZfsError);
+  // iSCSI:
+  cZfsUnshareISCSIFailedError = rb_define_class_under(mZfsError, "UnshareISCSIFailedError", cZfsError);
+  cZfsShareISCSIFailedError = rb_define_class_under(mZfsError, "ShareISCSIFailedError", cZfsError);
+
 }
 
 void Init_zetta()
@@ -1552,6 +1783,7 @@ void Init_zetta()
   rb_define_method(cLibZfs, "print_on_error", zetta_lib_print_on_error, 1);
   rb_define_method(cLibZfs, "error_action", zetta_lib_error_action, 0);
   rb_define_method(cLibZfs, "error_description", zetta_lib_error_description, 0);
+  rb_define_method(cLibZfs, "raise_error", zetta_lib_raise_error, 0);
 
   rb_define_singleton_method(cZpool, "new", zetta_pool_new, -1);
   rb_define_method(cZpool, "name", zetta_pool_get_name, 0);
@@ -1561,6 +1793,7 @@ void Init_zetta()
   rb_define_method(cZpool, "space_used", zetta_pool_get_space_used, 0);
   rb_define_method(cZpool, "space_total", zetta_pool_get_space_total, 0);
   rb_define_method(cZpool, "state", zetta_pool_get_state, 0);
+  rb_define_method(cZpool, "health_status", zetta_pool_get_health_status, 0);
   rb_define_method(cZpool, "version", zetta_pool_get_version, 0);
   rb_define_method(cZpool, "libzfs_handle", zetta_pool_get_handle, 0);
   // rb_define_method(cZpool, "destroy!", zetta_pool_destroy, 0);

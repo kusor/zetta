@@ -150,8 +150,10 @@ I've successfully built and tested the library on the following Open Solaris
 Versions:
 
 - Open Solaris 2009.06 (snv_111b)
-- Open Solaris 2010.02 Preview (snv_117)
+- Solaris Nevada 2010.02 Preview (snv_117)
 - Open Solaris Development 134 (snv_134)
+
+It's also properly building on FreeBSD 8.0.
 
 === TODO:
 
@@ -164,13 +166,6 @@ Versions:
 * Allow <code>@zfs.set</code> to use numerical values too.
 
 * Handle properties of type Integer from <code>@zfs.get_user_prop</code>
-
-* Define all the required library constants, and do not rely into libzfs values
-  from ruby. The implementation should try to hide whatever can change on
-  libzfs updates.
-
-* Define a set of custom error classes, and raise the appropriated one when
-  required. LibZfs error integers shouldn't be available to the end user.
 
 * Implement the equivalents for the following zfs subcommands:
 

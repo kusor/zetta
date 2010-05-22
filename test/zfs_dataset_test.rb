@@ -26,9 +26,10 @@ class ZfsDatasetTest < Test::Unit::TestCase
   end
 
   def test_initialize_unexistent
-    @zfs = ZFS.new('tpool/this_will_probably_not_exist', ZfsConsts::Types::FILESYSTEM, @zlib)
-    assert_nil @zfs
-    assert_equal ZfsConsts::Errors::NOENT, @zlib.errno
+    assert_raise(ZfsError::NoentError, "cannot open 'tpool/this_will_probably_not_exist': dataset does not exist") {
+      @zfs = ZFS.new('tpool/this_will_probably_not_exist', ZfsConsts::Types::FILESYSTEM, @zlib)
+    }
+    assert_not_equal 0, @zlib.errno
     assert_equal "cannot open 'tpool/this_will_probably_not_exist'", @zlib.error_action
     assert_equal "dataset does not exist", @zlib.error_description
   end
@@ -146,7 +147,7 @@ class ZfsDatasetTest < Test::Unit::TestCase
     @zfs = ZFS.new('tpool/thome', ZfsConsts::Types::FILESYSTEM, @zlib)
     children_fs = []
     @zfs.each_dependent do |zfs|
-      assert (zfs.fs_type == ZfsConsts::Types::SNAPSHOT || ZfsConsts::Types::FILESYSTEM)
+      assert (zfs.fs_type == ZfsConsts::Types::SNAPSHOT || zfs.fs_type == ZfsConsts::Types::FILESYSTEM)
       children_fs << zfs
     end
     assert !children_fs.empty?
@@ -172,14 +173,15 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert_respond_to create_fs, :name
     assert_equal create_ok_name, create_fs.get('name')
     assert ZFS.exists?(create_ok_name, ZfsConsts::Types::FILESYSTEM, @zlib)
-    assert_equal 0, create_fs.destroy!
+    assert create_fs.destroy!
     assert !ZFS.exists?(create_ok_name, ZfsConsts::Types::FILESYSTEM, @zlib)
   end
 
   def test_create_failure
     create_failure_name = "fakepool/new_filesystem_name_#{rand(1000)}"
-    create_fs = ZFS.create(create_failure_name, ZfsConsts::Types::FILESYSTEM, @zlib)
-    assert !create_fs
+    assert_raise(ZfsError::NoentError) {
+      ZFS.create(create_failure_name, ZfsConsts::Types::FILESYSTEM, @zlib)
+    }
     assert_not_equal 0, @zlib.errno
     # cannot create ...
     assert_not_equal '', @zlib.error_action
@@ -195,7 +197,7 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert_respond_to create_fs, :name
     assert_equal create_ok_name, create_fs.get('name')
     assert ZFS.exists?(create_ok_name, ZfsConsts::Types::FILESYSTEM)
-    assert_equal 0, create_fs.destroy!
+    assert create_fs.destroy!
     assert !ZFS.exists?(create_ok_name, ZfsConsts::Types::FILESYSTEM)
   end
 
@@ -210,19 +212,20 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert_kind_of ZFS, @snap
     assert_equal(ZfsConsts::Types::SNAPSHOT, @snap.fs_type)
 
-    assert_equal 0, @snap.destroy!
+    assert @snap.destroy!
     assert !ZFS.exists?(snap_name, ZfsConsts::Types::SNAPSHOT, @zlib)
   end
 
   def test_snapshot_failure
     snap_name = 'tpool/this_will_probably_not_exists@snap'
-    @snap = ZFS.snapshot(snap_name, @zlib)
+    assert_raise(ZfsError::NoentError) {
+      ZFS.snapshot(snap_name, @zlib)
+    }
     assert_not_equal 0, @zlib.errno
     # cannot open ...
     assert_not_equal '', @zlib.error_action
     # dataset does not exist
     assert_not_equal "no error", @zlib.error_description
-    assert_nil @snap
   end
 
   def test_can_clone_only_snapshots
@@ -240,14 +243,16 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert_equal(ZfsConsts::Types::FILESYSTEM, @clone.fs_type)
     # A second attempt to create the another clone with the same name
     # will result in a failure:
-    assert_nil @zfs.clone!(clone_name)
+    assert_raise(ZfsError::DatasetExistsError) {
+      @zfs.clone!(clone_name)
+    }
     assert_not_equal 0, @zlib.errno
     # cannot create ...
     assert_not_equal '', @zlib.error_action
     # dataset already exists
     assert_not_equal "no error", @zlib.error_description
     # Cleanup
-    assert_equal 0, @clone.destroy!
+    assert @clone.destroy!
     assert !ZFS.exists?(clone_name, ZfsConsts::Types::FILESYSTEM, @zlib)
   end
 
@@ -271,21 +276,21 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert @snap
     @clone = @snap.clone!(clone_name)
     # Trying to destroy the dataset with clones will fail
-    assert_equal(-1, @zfs.destroy!)
+    assert !@zfs.destroy!
     # Promote the clone
     assert @clone.promote
     # We can destroy the original dataset now
-    assert_equal 0, @zfs.destroy!
+    assert @zfs.destroy!
     # Now we cannot destroy the clone:
-    assert_equal(-1, @clone.destroy!)
+    assert !@clone.destroy!
     # The clone has a Snapshot with the same 'suffix' than the original one:
     assert ZFS.exists?("#{clone_name}@snap", ZfsConsts::Types::SNAPSHOT, @zlib)
     # So, the original snapshots does not exist now:
     assert !ZFS.exists?(snap_name, ZfsConsts::Types::SNAPSHOT, @zlib)
     # We have to delete the new snapshot before to try to delete the old one:
     @new_snap = ZFS.new("#{clone_name}@snap", ZfsConsts::Types::SNAPSHOT, @zlib)
-    assert_equal 0, @new_snap.destroy!
-    assert_equal 0, @clone.destroy!
+    assert @new_snap.destroy!
+    assert @clone.destroy!
   end
 
   def test_mount_unmount
@@ -295,11 +300,11 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert !create_fs.is_mounted?
     assert_equal 'no', create_fs.get('mounted')
     assert_equal "/#{create_mounted_name}", create_fs.get('mountpoint')
-    assert_equal 0, create_fs.mount
+    assert create_fs.mount
     assert create_fs.is_mounted?
-    assert_equal 0, create_fs.unmount
+    assert create_fs.unmount
     assert !create_fs.is_mounted?
-    assert_equal 0, create_fs.destroy!
+    assert create_fs.destroy!
     assert !ZFS.exists?(create_mounted_name, ZfsConsts::Types::FILESYSTEM, @zlib)
   end
 
@@ -381,7 +386,7 @@ class ZfsDatasetTest < Test::Unit::TestCase
     @snap = ZFS.snapshot(snap_name, @zlib)
     assert_kind_of ZFS, @snap
     require 'fileutils'
-    assert_equal 0, @zfs.mount
+    assert @zfs.mount
     ds_path = @zfs.get('mountpoint')
     file_path = File.expand_path(File.join(File.dirname(__FILE__), '..','MIT-LICENSE'))
     FileUtils.copy_file file_path, File.join(ds_path, 'MIT-LICENSE')
@@ -390,7 +395,7 @@ class ZfsDatasetTest < Test::Unit::TestCase
     assert !File.exist?(File.join(ds_path, 'MIT-LICENSE'))
     assert ZFS.exists?(snap_name, ZfsConsts::Types::SNAPSHOT, @zlib)
     # zfs.destroy! can fail sometimes with "dataset is busy"
-    while (@snap.destroy! != 0 && @zlib.errno == 2007)
+    while (!@snap.destroy! && @zlib.errno == 2007)
       sleep(5)
     end
     @zfs.unmount

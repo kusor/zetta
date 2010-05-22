@@ -29,10 +29,11 @@ class ZpoolTest < Test::Unit::TestCase
   end
 
   def test_initialize_unexistent
-    @zpool = Zpool.new('fakepool', @zlib)
-    assert_not_nil @zpool
-    assert_kind_of Zpool, @zpool
-    assert_equal ZfsConsts::Errors::NOENT, @zlib.errno
+    # It's probably a good idea to completely forget error message check here:
+    assert_raise(ZfsError::NoentError, "cannot open 'fakepool': no such pool") {
+      @zpool = Zpool.new('fakepool', @zlib)
+    }
+    assert_not_equal 0, @zlib.errno
     # WARN: This is actually testing strings which might change on C,
     # and can be localized, depending on system locale settings.
     assert_equal "cannot open 'fakepool'", @zlib.error_action
@@ -68,6 +69,11 @@ class ZpoolTest < Test::Unit::TestCase
   def test_zpool_state
     @zpool = Zpool.new('tpool', @zlib)
     assert_equal ZfsConsts::State::Pool::ACTIVE, @zpool.state
+  end
+
+  def test_zpool_health_status
+    @zpool = Zpool.new('tpool', @zlib)
+    assert_equal ZfsConsts::HealthStatus::OK, @zpool.health_status
   end
 
   def test_zpool_root
